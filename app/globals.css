@@ -1,26 +1,42 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  /* --- Color Palette --- */
+  /* Usage in code: bg-background, text-primary, border-surface, etc. */
+  
+  --color-background: #0f172a; /* Slate 900 */
+  --color-surface: #1e293b;    /* Slate 800 */
+  
+  --color-primary: #3b82f6;    /* Blue 500 */
+  --color-primary-hover: #2563eb; /* Blue 600 */
+  
+  --color-text: #f8fafc;       /* Slate 50 */
+  --color-text-muted: #94a3b8; /* Slate 400 */
+  
+  --color-border: #334155;     /* Slate 700 */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* --- Animations --- */
+  /* Usage in code: animate-float */
+  
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-spin: spin 1s linear infinite;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+  }
+  
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* --- Base Styles --- */
+/* This forces the dark background on the whole body */
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-text);
+  }
 }

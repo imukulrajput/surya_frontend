@@ -1,0 +1,184 @@
+"use client";
+import { useState, useEffect } from "react";
+import api from "@/lib/axios";
+import { toast, Toaster } from "react-hot-toast";
+
+// --- Action Modal (Approve/Reject) ---
+const ActionModal = ({ isOpen, onClose, request, action, onSuccess }) => {
+    const [inputValue, setInputValue] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    if (!isOpen) return null;
+
+    const handleSubmit = async () => {
+        setLoading(true);
+        try {
+            await api.post(`/admin/withdrawals/${request._id}`, {
+                action: action, // "approve" or "reject"
+                transactionId: action === 'approve' ? inputValue : undefined,
+                comment: action === 'reject' ? inputValue : undefined
+            });
+            toast.success(`Request ${action}ed!`);
+            onSuccess();
+            onClose();
+        } catch (error) {
+            toast.error("Failed to process");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-900 border border-slate-700 p-6 rounded-xl w-full max-w-md">
+                <h3 className={`text-xl font-bold mb-4 ${action === 'approve' ? 'text-green-400' : 'text-red-400'}`}>
+                    {action === 'approve' ? 'Approve Payment' : 'Reject Request'}
+                </h3>
+                
+                <p className="text-slate-300 mb-4 text-sm">
+                    User: <span className="text-white font-bold">{request.userId.fullName}</span><br/>
+                    Amount: <span className="text-white font-bold">₹{request.amount}</span>
+                </p>
+
+                <label className="block text-slate-400 text-xs font-bold mb-2">
+                    {action === 'approve' ? 'ENTER TRANSACTION ID (UTR):' : 'REASON FOR REJECTION:'}
+                </label>
+                <input 
+                    type="text" 
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 p-3 rounded text-white mb-6 outline-none focus:border-blue-500"
+                    placeholder={action === 'approve' ? 'e.g. 345281903' : 'e.g. Invalid bank details'}
+                />
+
+                <div className="flex gap-3">
+                    <button onClick={onClose} className="flex-1 py-2 bg-slate-800 text-slate-300 rounded hover:bg-slate-700">Cancel</button>
+                    <button 
+                        onClick={handleSubmit} 
+                        disabled={loading}
+                        className={`flex-1 py-2 rounded font-bold text-white ${action === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
+                    >
+                        {loading ? "Processing..." : "Confirm"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default function FinancePage() {
+    const [withdrawals, setWithdrawals] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [modalData, setModalData] = useState(null); // { request, action }
+
+    const fetchWithdrawals = async () => {
+        try {
+            const { data } = await api.get("/admin/withdrawals");
+            setWithdrawals(data.withdrawals);
+        } catch (error) {
+            toast.error("Failed to load data");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => { fetchWithdrawals(); }, []);
+
+    // Helper to format bank details object into text
+    const formatDetails = (details) => {
+        if (!details) return "N/A";
+        // If it's a JSON string, parse it first
+        const d = typeof details === 'string' ? JSON.parse(details) : details;
+        return (
+            <div className="text-xs text-slate-400 space-y-1">
+                <p><strong className="text-slate-300">Bank:</strong> {d.bankName}</p>
+                <p><strong className="text-slate-300">Acct:</strong> {d.accountNumber}</p>
+                <p><strong className="text-slate-300">IFSC:</strong> {d.ifsc}</p>
+                <p><strong className="text-slate-300">Name:</strong> {d.fullName}</p>
+            </div>
+        );
+    };
+
+    return (
+        <div className="min-h-screen text-white">
+            <Toaster position="top-right" />
+            <h1 className="text-3xl font-bold mb-8">Finance & Payouts</h1>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                <table className="w-full text-left">
+                    <thead className="bg-slate-950 text-slate-400 text-xs uppercase font-bold">
+                        <tr>
+                            <th className="p-4">User</th>
+                            <th className="p-4">Amount</th>
+                            <th className="p-4">Bank Details</th>
+                            <th className="p-4">Status</th>
+                            <th className="p-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800">
+                        {loading ? (
+                            <tr><td colSpan="5" className="p-8 text-center text-slate-500">Loading...</td></tr>
+                        ) : withdrawals.length === 0 ? (
+                            <tr><td colSpan="5" className="p-8 text-center text-slate-500">No withdrawal requests found.</td></tr>
+                        ) : (
+                            withdrawals.map((req) => (
+                                <tr key={req._id} className="hover:bg-slate-800/50 transition">
+                                    <td className="p-4">
+                                        <p className="font-bold text-white">{req.userId?.fullName || "Unknown"}</p>
+                                        <p className="text-xs text-slate-500">{req.userId?.email}</p>
+                                        <p className="text-[10px] text-slate-600 mt-1">{new Date(req.createdAt).toLocaleDateString()}</p>
+                                    </td>
+                                    <td className="p-4 font-mono text-green-400 font-bold text-lg">
+                                        ₹{req.amount}
+                                    </td>
+                                    <td className="p-4">
+                                        {formatDetails(req.details)}
+                                    </td>
+                                    <td className="p-4">
+                                        <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
+                                            req.status === 'Pending' ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20' :
+                                            req.status === 'Processed' ? 'bg-green-500/10 text-green-500 border border-green-500/20' :
+                                            'bg-red-500/10 text-red-500 border border-red-500/20'
+                                        }`}>
+                                            {req.status}
+                                        </span>
+                                        {req.transactionId && req.status === 'Processed' && (
+                                            <p className="text-[10px] text-slate-500 mt-1">UTR: {req.transactionId}</p>
+                                        )}
+                                    </td>
+                                    <td className="p-4 text-right">
+                                        {req.status === 'Pending' && (
+                                            <div className="flex justify-end gap-2">
+                                                <button 
+                                                    onClick={() => setModalData({ request: req, action: 'approve' })}
+                                                    className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition"
+                                                >
+                                                    Pay
+                                                </button>
+                                                <button 
+                                                    onClick={() => setModalData({ request: req, action: 'reject' })}
+                                                    className="px-3 py-1 bg-slate-800 hover:bg-red-600 text-white text-xs font-bold rounded transition"
+                                                >
+                                                    Reject
+                                                </button>
+                                            </div>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Action Modal */}
+            <ActionModal 
+                isOpen={!!modalData} 
+                onClose={() => setModalData(null)}
+                request={modalData?.request}
+                action={modalData?.action}
+                onSuccess={fetchWithdrawals}
+            />
+        </div>
+    );
+}
