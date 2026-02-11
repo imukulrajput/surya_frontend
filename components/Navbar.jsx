@@ -45,7 +45,7 @@ export default function Navbar() {
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center gap-2 group">
           <div className="w-8 h-8 bg-gradient-to-tr from-blue-600 to-cyan-400 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20 group-hover:scale-105 transition">S</div>
-          <span className="font-bold text-xl tracking-tight text-white">SelfWorker</span>
+          <span className="font-bold text-xl tracking-tight text-white">MyWorker</span>
         </Link>
 
         {/* Desktop Navigation */}

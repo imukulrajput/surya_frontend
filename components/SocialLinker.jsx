@@ -10,29 +10,13 @@ const CheckCircleIcon = ({ className }) => (
   </svg>
 );
 
-const ClipboardDocumentIcon = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
-  </svg>
-);
-
-const TrashIcon = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-    </svg>
-);
-
 export default function SocialLinker({ onSuccess }) {
-  const [step, setStep] = useState(1); // 1 = Generate, 2 = Verify
   const [loading, setLoading] = useState(false);
-  const [code, setCode] = useState(null);
-  const [platform, setPlatform] = useState("Instagram");
+  const [platform, setPlatform] = useState("Moj");
   const [url, setUrl] = useState("");
   
-  // New State for Linked Accounts
   const [linkedAccounts, setLinkedAccounts] = useState([]);
 
-  // Fetch Accounts on Load
   useEffect(() => {
     fetchAccounts();
   }, []);
@@ -46,55 +30,57 @@ export default function SocialLinker({ onSuccess }) {
     }
   };
 
-  const copyToClipboard = () => {
-    if (code) {
-      if (typeof navigator !== 'undefined') {
-        navigator.clipboard.writeText(code);
-        toast.success("Code copied!");
-      } else {
-        toast.error("Clipboard not supported");
-      }
-    }
-  };
-
-  const generateCode = async () => {
-    setLoading(true);
-    try {
-      const { data } = await api.post("/social/generate-code");
-      setCode(data.code);
-      setStep(2);
-      toast.success("Code Generated!");
-    } catch (error) {
-      toast.error("Failed to generate code");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const verifyAccount = async () => {
+    // 1. Basic Validation
     if (!url) return toast.error("Please enter your profile URL");
+    if (!url.startsWith("http")) {
+        return toast.error("Please enter a valid Link (starting with http/https)");
+    }
     
     setLoading(true);
+    const toastId = toast.loading("Verifying account...");
+
     try {
+      const cleanUrl = url.trim();
+
       await api.post("/social/verify", { 
         platform, 
-        profileUrl: url 
+        profileUrl: cleanUrl 
       });
 
-      toast.success("Account Verified Successfully!");
-      
-      // Update the list immediately
+      // SUCCESS HANDLING
+      toast.success("Account Linked Successfully!", { id: toastId });
       fetchAccounts();
-
       if (onSuccess) onSuccess(); 
-
-      // Reset Form
-      setStep(1);
-      setUrl("");
-      setCode(null);
+      setUrl(""); // Clear input only on success
 
     } catch (error) {
-      toast.error(error.response?.data?.message || "Verification Failed");
+      console.error("Link Error:", error);
+
+      // ERROR HANDLING
+      if (error.response) {
+          // Case 1: Duplicate Account (409 Conflict)
+          if (error.response.status === 409) {
+              toast.error(
+                  <div className="flex flex-col">
+                      <span className="font-bold">Account Already Linked!</span>
+                      <span className="text-sm">You have already added this profile.</span>
+                  </div>, 
+                  { id: toastId, duration: 4000 }
+              );
+          } 
+          // Case 2: Other API Errors (Invalid URL, etc)
+          else {
+              toast.error(error.response.data.message || "Linking Failed", { id: toastId });
+              // Show hint if backend sends one
+              if(error.response.data.hint) {
+                  setTimeout(() => toast(error.response.data.hint, { icon: '💡' }), 1000);
+              }
+          }
+      } else {
+          // Case 3: Network/Server Error
+          toast.error("Network Error. Please try again.", { id: toastId });
+      }
     } finally {
       setLoading(false);
     }
@@ -103,7 +89,7 @@ export default function SocialLinker({ onSuccess }) {
   return (
     <div className="space-y-8">
       
-      {/* --- NEW SECTION: Display Linked Accounts --- */}
+      {/* --- Display Linked Accounts --- */}
       {linkedAccounts.length > 0 && (
           <div className="space-y-3">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -119,13 +105,13 @@ export default function SocialLinker({ onSuccess }) {
                               </div>
                               <div className="overflow-hidden">
                                   <h4 className="font-bold text-white text-sm">{acc.platform}</h4>
-                                  <a href={acc.profileUrl} target="_blank" className="text-xs text-blue-400 hover:text-blue-300 truncate block max-w-[200px]">
-                                      {acc.profileUrl}
+                                  <a href={acc.profileUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:text-blue-300 truncate block max-w-[200px]">
+                                      @{acc.username || "user"}
                                   </a>
                               </div>
                           </div>
                           <div className="flex items-center gap-3">
-                              <span className="px-2 py-1 bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-bold uppercase rounded">Verified</span>
+                              <span className="px-2 py-1 bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-bold uppercase rounded">Active</span>
                           </div>
                       </div>
                   ))}
@@ -133,84 +119,50 @@ export default function SocialLinker({ onSuccess }) {
           </div>
       )}
 
-      {/* --- EXISTING FORM: Link New Account --- */}
-      <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg">
-        <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+      {/* --- Link New Account Form --- */}
+      <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-bl-full pointer-events-none"></div>
+
+        <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2 relative z-10">
           <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
           Link New Account
         </h3>
+        <p className="text-sm text-slate-400 mb-6 relative z-10">
+            Paste your profile URL below. We will verify your username automatically.
+        </p>
         
-        {step === 1 ? (
-          <div className="space-y-4">
-            <p className="text-sm text-slate-400">
-              Select a platform and verify ownership to enable tasks.
-            </p>
-            <button 
-              onClick={generateCode} 
-              disabled={loading}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition disabled:opacity-50 shadow-lg shadow-blue-900/20"
-            >
-              {loading ? "Generating..." : "Start Verification"}
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="bg-slate-900 p-4 rounded-xl border border-slate-700 text-center relative group">
-              <p className="text-xs text-slate-500 mb-1 uppercase tracking-wider">Your Verification Code</p>
-              <p className="text-2xl font-mono font-bold text-white tracking-widest">{code}</p>
-              <button 
-                  onClick={copyToClipboard}
-                  className="absolute top-2 right-2 p-2 text-slate-500 hover:text-white bg-slate-800 rounded-lg opacity-0 group-hover:opacity-100 transition"
-                  title="Copy Code"
-              >
-                  <ClipboardDocumentIcon className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <div className="text-xs text-yellow-500 bg-yellow-500/10 p-3 rounded-lg border border-yellow-500/20">
-                ⚠️ <strong>Step 1:</strong> Paste this code in your Bio. <br/>
-                ⚠️ <strong>Step 2:</strong> Wait 1 min, then paste your URL below.
-            </div>
-
+        <div className="space-y-4 relative z-10">
             <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase">Select Platform</label>
               <select 
                   value={platform} 
                   onChange={(e) => setPlatform(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 text-white p-3 rounded-lg outline-none focus:border-blue-500"
+                  className="w-full bg-slate-950 border border-slate-700 text-white p-3 rounded-xl outline-none focus:border-blue-500 transition-all cursor-pointer"
               >
-                  <option value="Instagram">Instagram</option>
                   <option value="Moj">Moj</option>
                   <option value="ShareChat">ShareChat</option>
-                  <option value="Josh">Josh</option>
               </select>
-              
+            </div>    
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase">Profile Link</label>
               <input 
                   type="text" 
-                  placeholder="Paste Profile URL..." 
+                  placeholder={platform === 'Moj' ? "e.g. https://mojapp.in/@surya123" : "e.g. https://sharechat.com/profile/surya123"}
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 text-white p-3 rounded-lg outline-none focus:border-blue-500"
+                  className="w-full bg-slate-950 border border-slate-700 text-white p-3 rounded-xl outline-none focus:border-blue-500 transition-all placeholder-slate-600"
               />
             </div>
 
-            <div className="flex gap-2">
-               <button 
-                  onClick={() => setStep(1)}
-                  className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition"
-               >
-                  Cancel
-               </button>
-               <button 
-                  onClick={verifyAccount} 
-                  disabled={loading}
-                  className="flex-[2] py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition disabled:opacity-50 flex items-center justify-center gap-2"
-               >
-                  {loading ? "Checking..." : "Verify Now"}
-                  {!loading && <CheckCircleIcon className="w-5 h-5" />}
-               </button>
-            </div>
-          </div>
-        )}
+            <button 
+                onClick={verifyAccount} 
+                disabled={loading}
+                className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-900/20 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-4"
+            >
+                {loading ? "Verifying..." : "Link Account Now"}
+            </button>
+        </div>
       </div>
     </div>
   );

@@ -12,7 +12,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "SelfWorker - Professional Services",
+  title: "MyWorker - Professional Services",
   description: "Find the perfect worker for any job.",
 };
 

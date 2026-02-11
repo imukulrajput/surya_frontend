@@ -118,7 +118,7 @@ export default function WithdrawPage() {
         const [uRes, mRes, hRes] = await Promise.all([
             api.get("/users/me"),
             api.get("/wallet/methods"),
-            api.get("/wallet/history")
+            api.get("/wallet/history") 
         ]);
         setUser(uRes.data.user);
         setMethods(mRes.data.methods);
@@ -129,26 +129,41 @@ export default function WithdrawPage() {
   useEffect(() => { fetchData(); }, []);
 
   const hasLinkedAccount = methods.length > 0;
+  
+  // BUG FIX #4: Calculate Pending Withdrawals to show user where money went
+  const pendingAmount = history
+    .filter(t => t.status === 'Pending')
+    .reduce((acc, curr) => acc + curr.amount, 0);
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <Toaster position="top-right" />
       
-      {/* Balance Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-            <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Current Balance</p>
-            <h2 className="text-5xl font-black text-white">₹ {user?.walletBalance || 0}</h2>
-        </div>
-        {hasLinkedAccount && (
-             <button 
-                onClick={() => setShowRequestModal(true)}
-                className="bg-white text-slate-900 hover:bg-slate-200 py-3 px-6 rounded-xl font-bold shadow-xl shadow-white/10 transition flex items-center gap-2"
-            >
-                <span>Request Payout</span>
-                <span>→</span>
-            </button>
-        )}
+      {/* Balance Header Grid */}
+      <div className="grid md:grid-cols-2 gap-6">
+          {/* Card 1: Available Balance */}
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-2xl border border-slate-700 shadow-xl">
+             <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Available Balance</p>
+             <h2 className="text-5xl font-black text-white mb-4">₹ {user?.walletBalance || 0}</h2>
+             
+             {hasLinkedAccount && (
+                  <button 
+                    onClick={() => setShowRequestModal(true)}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-900/20 transition flex items-center justify-center gap-2"
+                  >
+                    <span>Request Payout</span>
+                  </button>
+             )}
+          </div>
+
+          {/* Card 2: Pending Withdrawal (Fixes Confusion) */}
+          <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl flex flex-col justify-center">
+             <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Pending Processing</p>
+             <h2 className="text-4xl font-bold text-yellow-400 mb-2">₹ {pendingAmount}</h2>
+             <p className="text-xs text-slate-500">
+                This amount has been deducted from your wallet and is waiting for admin approval.
+             </p>
+          </div>
       </div>
 
       <div className="bg-blue-900/20 border border-blue-500/20 p-4 rounded-xl text-blue-200 text-sm flex gap-3 items-start">
@@ -216,20 +231,20 @@ export default function WithdrawPage() {
                                </div>
                                <div>
                                    <h4 className="font-bold text-white">
-                                       {tx.status === 'Rejected' ? 'Request Rejected' : 'Withdrawal to Bank'}
+                                           {tx.status === 'Rejected' ? 'Request Rejected' : 'Withdrawal to Bank'}
                                    </h4>
                                    <p className="text-xs text-slate-500">
-                                       {new Date(tx.createdAt).toLocaleDateString()}
+                                           {new Date(tx.createdAt).toLocaleDateString()}
                                    </p>
                                    {tx.transactionId && tx.transactionId !== "N/A" && (
-                                       <div className="mt-1">
-                                           <code className="bg-slate-900 px-2 py-0.5 rounded text-[10px] font-mono text-slate-300 border border-slate-800">
-                                               UTR: {tx.transactionId}
-                                           </code>
-                                       </div>
+                                           <div className="mt-1">
+                                                   <code className="bg-slate-900 px-2 py-0.5 rounded text-[10px] font-mono text-slate-300 border border-slate-800">
+                                                           UTR: {tx.transactionId}
+                                                   </code>
+                                           </div>
                                    )}
                                    {tx.status === 'Rejected' && tx.adminComment && (
-                                       <p className="text-xs text-red-400 mt-1">Reason: {tx.adminComment}</p>
+                                           <p className="text-xs text-red-400 mt-1">Reason: {tx.adminComment}</p>
                                    )}
                                </div>
                            </div>

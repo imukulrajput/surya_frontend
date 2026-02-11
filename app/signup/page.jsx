@@ -19,7 +19,7 @@ const handleSubmit = async (e) => {
     setLoading(true); 
     try { 
       await api.post("/users/signup", formData);
-      toast.success("Welcome to SelfWorker!");
+      toast.success("Welcome to MyWorker!");
       router.push("/dashboard"); 
     } catch (error) {
       // --- IMPROVED ERROR HANDLING ---
@@ -40,7 +40,7 @@ const handleSubmit = async (e) => {
   };
 
   return (
-    <AuthLayout title="Join SelfWorker" subtitle="Start your professional journey today">
+    <AuthLayout title="Join MyWorker" subtitle="Start your professional journey today">
       <Toaster position="top-right" toastOptions={{ style: { background: '#334155', color: '#fff' } }}/>
       <form onSubmit={handleSubmit}>
         <AuthInput label="Full Name" name="fullName" type="text" placeholder="John Doe" value={formData.fullName} onChange={handleChange} />

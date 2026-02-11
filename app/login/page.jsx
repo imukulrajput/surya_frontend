@@ -58,7 +58,7 @@ export default function Login() {
         <AuthButton text="Sign In" isLoading={loading} />
       </form>
       <p className="text-center text-textMuted mt-6 text-sm">
-        New to SelfWorker? <Link href="/signup" className="text-primary hover:text-blue-400 font-semibold transition-colors">Create account</Link>
+        New to MyWorker? <Link href="/signup" className="text-primary hover:text-blue-400 font-semibold transition-colors">Create account</Link>
       </p>
     </AuthLayout>
   );

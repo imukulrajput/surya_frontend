@@ -4,7 +4,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-slate-500 text-sm">
-            &copy; {new Date().getFullYear()} SelfWorker. All rights reserved.
+            &copy; {new Date().getFullYear()} MyWorker. All rights reserved.
           </div>
           <div className="flex gap-6 text-sm font-medium text-slate-400">
             <span className="cursor-pointer hover:text-white transition">Terms</span>

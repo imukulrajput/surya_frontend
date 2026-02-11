@@ -57,7 +57,7 @@ export default function SupportPage() {
                 </div>
                 <div>
                   <p className="text-sm text-blue-200">Email</p>
-                  <p className="font-semibold">help@selfworker.com</p>
+                  <p className="font-semibold">help@myworker.com</p>
                 </div>
               </div>
             </div>

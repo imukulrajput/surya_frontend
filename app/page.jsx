@@ -9,7 +9,7 @@ export default function Home() {
       {/* Navbar */}
       <nav className="flex justify-between items-center px-8 py-6 max-w-7xl mx-auto">
         <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-          SelfWorker
+          MyWorker
         </div>
         <div className="space-x-4">
           <Link href="/login" className="text-gray-300 hover:text-white transition">Login</Link>
