@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Toaster } from "react-hot-toast";
 import { motion } from "framer-motion";
 import api from "@/lib/axios"; 
-import AccountSelector from "@/components/AccountSelector"; // <--- Import this
+import AccountSelector from "@/components/AccountSelector";
 
 const WalletIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 7h-3a2 2 0 0 1-2-2V3"/><path d="M9 18a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M12 12h.01"/></svg>);
 const TaskIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-5.523 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>);
@@ -14,7 +14,27 @@ export default function Dashboard() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [announcement, setAnnouncement] = useState(null);
-  const [selectedAccount, setSelectedAccount] = useState(null); // <--- Track selected account
+  const [selectedAccount, setSelectedAccount] = useState(null);
+
+  useEffect(() => {
+    // 1. Store the date when the user first opens the dashboard
+    const todayStr = new Date().toDateString();
+    localStorage.setItem('dashboardDate', todayStr);
+
+    // 2. Check every minute if the date has changed
+    const interval = setInterval(() => {
+        const storedDate = localStorage.getItem('dashboardDate');
+        const currentDate = new Date().toDateString();
+        
+        // If the date has changed (e.g., passed midnight), reload the page
+        if (storedDate && storedDate !== currentDate) {
+            console.log("New Day Detected: Refreshing Dashboard...");
+            window.location.reload(); 
+        }
+    }, 60000); // Check every 60 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   // 1. Fetch User Data
   const fetchUser = useCallback(async () => {
@@ -32,14 +52,19 @@ export default function Dashboard() {
     }
   }, []);
 
-  // 2. Fetch Tasks when Selected Account Changes
+  // 2. Fetch Tasks (Fix: Fetch even if no account is selected)
   useEffect(() => {
-    if (selectedAccount) {
-        api.get(`/tasks/daily?accountId=${selectedAccount._id}`)
+    // If loading user is done...
+    if (!loading) {
+        // Query param is empty if no account (fetches all active tasks raw)
+        // Query param has ID if account selected (fetches tasks + status)
+        const query = selectedAccount ? `?accountId=${selectedAccount._id}` : "";
+        
+        api.get(`/tasks/daily${query}`)
            .then(res => setTasks(res.data.tasks))
            .catch(err => console.error(err));
     }
-  }, [selectedAccount]);
+  }, [selectedAccount, loading]);
 
   useEffect(() => {
     fetchUser();
@@ -51,10 +76,11 @@ export default function Dashboard() {
 
   // Calculations
   const completedCount = tasks.filter(t => t.isCompleted).length;
-  // Note: Total count is usually 50 per batch
-  const totalCount = tasks.length || 50; 
+  // This will now reflect the real number of tasks in DB (e.g. 50) even if not logged in
+  const totalCount = tasks.length; 
+  
   const pendingEarnings = completedCount * 2.5; 
-  const progressPercentage = (completedCount / totalCount) * 100;
+  const progressPercentage = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
   if (loading) return (
     <div className="h-96 flex items-center justify-center">
@@ -126,6 +152,7 @@ export default function Dashboard() {
                <h3 className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">
                   Daily Progress <span className="text-blue-500">({selectedAccount?.platform || 'N/A'})</span>
                </h3>
+               {/* This will now show 0 / 50 if 50 tasks exist in DB */}
                <p className="text-2xl font-bold text-white">{completedCount} / {totalCount} Tasks</p>
              </div>
              <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500"><TaskIcon /></div>
@@ -143,7 +170,7 @@ export default function Dashboard() {
 
            <Link href="/tasks" className="block">
              <button className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition shadow-lg shadow-blue-900/20">
-                {completedCount === totalCount ? "All Done! 🎉" : "Continue Tasks"}
+                {totalCount > 0 && completedCount === totalCount ? "All Done! 🎉" : "Continue Tasks"}
              </button>
            </Link>
         </motion.div>

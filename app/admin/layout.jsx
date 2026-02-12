@@ -7,12 +7,13 @@ export default function AdminLayout({ children }) {
   
   const navItems = [
     { name: "Overview", path: "/admin/dashboard" },
-    { name: "Approvals", path: "/admin/approvals" }, 
-    { name: "Upload Tasks", path: "/admin/upload" },
-    { name: "Finance & Payouts", path: "/admin/finance" }, // <-- Added this
-    { name: "User Management", path: "/admin/users" },     // <-- Added this
+    { name: "Approvals", path: "/admin/approvals" }, // <--- THIS WAS MISSING
+    { name: "Manage Tasks", path: "/admin/tasks" },
+    { name: "Bulk Upload", path: "/admin/upload" },
+    { name: "Finance & Payouts", path: "/admin/finance" },
+    { name: "User Management", path: "/admin/users" },
     { name: "Support Tickets", path: "/admin/support" },
-    { name: "Settings & Broadcast", path: "/admin/settings" }, // <-- Added this (Announcement is here!)
+    { name: "Settings & Broadcast", path: "/admin/settings" },
   ];
 
   return (

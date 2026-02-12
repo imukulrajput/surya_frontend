@@ -84,10 +84,27 @@ export default function FinancePage() {
 
     useEffect(() => { fetchWithdrawals(); }, []);
 
+    // --- NEW: Handle CSV Export ---
+    const handleExport = async () => {
+        try {
+            const response = await api.get('/admin/withdrawals/export', { responseType: 'blob' });
+            // Create a download link programmatically
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'pending_payouts.csv');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            toast.success("Payout List Downloaded!");
+        } catch (error) {
+            toast.error("Export Failed");
+        }
+    };
+
     // Helper to format bank details object into text
     const formatDetails = (details) => {
         if (!details) return "N/A";
-        // If it's a JSON string, parse it first
         const d = typeof details === 'string' ? JSON.parse(details) : details;
         return (
             <div className="text-xs text-slate-400 space-y-1">
@@ -102,7 +119,21 @@ export default function FinancePage() {
     return (
         <div className="min-h-screen text-white">
             <Toaster position="top-right" />
-            <h1 className="text-3xl font-bold mb-8">Finance & Payouts</h1>
+            
+            <div className="flex justify-between items-center mb-8">
+                <h1 className="text-3xl font-bold">Finance & Payouts</h1>
+                
+                {/* --- EXPORT BUTTON --- */}
+                <button 
+                    onClick={handleExport}
+                    className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-bold border border-slate-700 transition"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                    Export CSV
+                </button>
+            </div>
 
             <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
                 <table className="w-full text-left">

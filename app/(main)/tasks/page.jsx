@@ -214,29 +214,40 @@ export default function TaskDashboard() {
                                     <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-yellow-400 text-sm font-semibold flex items-center gap-2">
                                         <span>⏳ Submitted & Pending Approval</span>
                                     </div>
-                                ) : task.status === "Rejected" ? (
-                                    <div className="space-y-3">
-                                        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm font-semibold flex items-center gap-2">
-                                            <span>✕ Task Rejected. Please check and resubmit.</span>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <input 
-                                                type="text" 
-                                                placeholder="Paste corrected link..."
-                                                className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                                                value={proofInputs[task._id] || ""}
-                                                onChange={(e) => setProofInputs({...proofInputs, [task._id]: e.target.value})}
-                                            />
-                                            <button 
-                                                onClick={() => handleSubmit(task)}
-                                                disabled={submitting === task._id}
-                                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm transition disabled:opacity-50"
-                                            >
-                                                {submitting === task._id ? '...' : 'Resubmit'}
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
+                              ) : task.status === "Rejected" ? (
+                            <div className="space-y-3">
+                                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm flex flex-col gap-1">
+                                    <span className="font-bold flex items-center gap-2">
+                                        ✕ Task Rejected
+                                    </span>
+                                    {/* --- FIX #4: SHOW REASON --- */}
+                                    {task.adminComment && (
+                                        <span className="text-xs text-red-300 bg-red-900/20 p-2 rounded border border-red-900/30">
+                                          Reason: {task.adminComment}
+                                        </span>
+                                    )}
+                                    <span className="text-[10px] opacity-70">Please fix the issue and resubmit below.</span>
+                                </div>
+                                
+                                {/* Resubmission Input */}
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        placeholder="Paste corrected link..."
+                                        className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                        value={proofInputs[task._id] || ""}
+                                        onChange={(e) => setProofInputs({...proofInputs, [task._id]: e.target.value})}
+                                    />
+                                    <button 
+                                        onClick={() => handleSubmit(task)}
+                                        disabled={submitting === task._id}
+                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm transition disabled:opacity-50"
+                                    >
+                                        {submitting === task._id ? '...' : 'Resubmit'}
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
                                     <div className="flex gap-2">
                                         <input 
                                             type="text" 
