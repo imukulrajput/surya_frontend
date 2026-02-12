@@ -6,8 +6,10 @@ import { motion } from "framer-motion";
 import api from "@/lib/axios"; 
 import AccountSelector from "@/components/AccountSelector";
 
+// Icons
 const WalletIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 7h-3a2 2 0 0 1-2-2V3"/><path d="M9 18a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M12 12h.01"/></svg>);
 const TaskIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-5.523 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>);
+const BankIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18"/><path d="M5 21V7"/><path d="M19 21V7"/><path d="M4 7h16"/><path d="m2 7 10-5 10 5"/><path d="M12 12v3"/></svg>);
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -15,6 +17,9 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [announcement, setAnnouncement] = useState(null);
   const [selectedAccount, setSelectedAccount] = useState(null);
+  
+  // --- NEW: State for Bank Details ---
+  const [bankDetails, setBankDetails] = useState(null);
 
   useEffect(() => {
     // 1. Store the date when the user first opens the dashboard
@@ -36,49 +41,58 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // 1. Fetch User Data
-  const fetchUser = useCallback(async () => {
+  // 1. Fetch User Data & Bank Details
+  const fetchData = useCallback(async () => {
     try {
-      const { data } = await api.get("/users/me");
-      setUser(data.user);
-      // Select the first account by default if available
-      if (data.user.linkedAccounts?.length > 0) {
-        setSelectedAccount(data.user.linkedAccounts[0]);
+      // Parallel requests for faster loading
+      const [userRes, walletRes] = await Promise.allSettled([
+          api.get("/users/me"),
+          api.get("/wallet/methods")
+      ]);
+
+      // Handle User Data
+      if (userRes.status === "fulfilled") {
+          const userData = userRes.value.data.user;
+          setUser(userData);
+          if (userData.linkedAccounts?.length > 0) {
+            setSelectedAccount(userData.linkedAccounts[0]);
+          }
       }
+
+      // Handle Bank Details
+      if (walletRes.status === "fulfilled" && walletRes.value.data.methods.length > 0) {
+          setBankDetails(walletRes.value.data.methods[0]); // Take the first method
+      }
+
     } catch (error) {
-      console.error("User Load Error:", error);
+      console.error("Dashboard Load Error:", error);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // 2. Fetch Tasks (Fix: Fetch even if no account is selected)
+  // 2. Fetch Tasks (Dependent on selectedAccount or just general load)
   useEffect(() => {
-    // If loading user is done...
     if (!loading) {
-        // Query param is empty if no account (fetches all active tasks raw)
-        // Query param has ID if account selected (fetches tasks + status)
         const query = selectedAccount ? `?accountId=${selectedAccount._id}` : "";
-        
         api.get(`/tasks/daily${query}`)
            .then(res => setTasks(res.data.tasks))
            .catch(err => console.error(err));
     }
   }, [selectedAccount, loading]);
 
+  // Initial Load
   useEffect(() => {
-    fetchUser();
+    fetchData();
     api.get("/users/announcement").then(res => {
         if(res.data.announcement) setAnnouncement(res.data.announcement);
     }).catch(err => console.log("No announcement"));
-  }, [fetchUser]);
+  }, [fetchData]);
 
 
   // Calculations
   const completedCount = tasks.filter(t => t.isCompleted).length;
-  // This will now reflect the real number of tasks in DB (e.g. 50) even if not logged in
   const totalCount = tasks.length; 
-  
   const pendingEarnings = completedCount * 2.5; 
   const progressPercentage = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
@@ -104,7 +118,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Account Selector (Only if accounts exist) */}
+      {/* Account Selector (Only if social accounts exist) */}
       {user?.linkedAccounts?.length > 0 && (
          <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
              <div className="flex justify-between items-center mb-3">
@@ -127,33 +141,32 @@ export default function Dashboard() {
         </motion.div>
       )}
 
-      {/* Main Stats Grid */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Main Stats Grid - Updated to 4 Columns on Large Screens */}
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         
         {/* Card 1: Wallet (Global Balance) */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="p-6 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 shadow-xl relative overflow-hidden group">
            <div className="absolute top-0 right-0 p-4 opacity-10"><WalletIcon /></div>
-           <h3 className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">Total Wallet Balance</h3>
+           <h3 className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">Total Balance</h3>
            <div className="flex flex-col">
              <span className="text-4xl font-bold text-white tracking-tight">₹ {user?.walletBalance || 0}</span>
-             <p className="text-xs text-slate-500 mt-2">Combined earnings from all accounts</p>
+             <p className="text-xs text-slate-500 mt-2">Combined earnings</p>
            </div>
            <Link href="/withdraw" className="mt-6 block">
              <button className="w-full py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold rounded-lg transition">Manage Wallet</button>
            </Link>
         </motion.div>
 
-        {/* Card 2: Daily Progress (Per Account) */}
+        {/* Card 2: Daily Progress */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
           className="p-6 rounded-2xl bg-slate-800 border border-slate-700 shadow-xl">
            <div className="flex justify-between items-start mb-4">
              <div>
                <h3 className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">
-                  Daily Progress <span className="text-blue-500">({selectedAccount?.platform || 'N/A'})</span>
+                 Daily Tasks
                </h3>
-               {/* This will now show 0 / 50 if 50 tasks exist in DB */}
-               <p className="text-2xl font-bold text-white">{completedCount} / {totalCount} Tasks</p>
+               <p className="text-2xl font-bold text-white">{completedCount} / {totalCount}</p>
              </div>
              <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500"><TaskIcon /></div>
            </div>
@@ -163,9 +176,7 @@ export default function Dashboard() {
            </div>
            
            <div className="flex justify-between text-xs font-medium text-slate-500 mb-4">
-              <span>0%</span>
               <span>{Math.round(progressPercentage)}% Complete</span>
-              <span>100%</span>
            </div>
 
            <Link href="/tasks" className="block">
@@ -175,14 +186,50 @@ export default function Dashboard() {
            </Link>
         </motion.div>
 
-        {/* Card 3: Account Status / Verify CTA */}
+        {/* Card 3: Bank Details (NEW) */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+          className="p-6 rounded-2xl bg-slate-800 border border-slate-700 shadow-xl flex flex-col justify-between">
+           
+           <div className="flex justify-between items-start mb-2">
+             <h3 className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">Bank Details</h3>
+             <div className="p-2 bg-purple-500/10 rounded-lg text-purple-500"><BankIcon /></div>
+           </div>
+
+           {bankDetails ? (
+              <div>
+                  <div className="mb-4">
+                      <p className="text-xl font-bold text-white truncate" title={bankDetails.details.bankName}>
+                          {bankDetails.details.bankName}
+                      </p>
+                      <p className="text-slate-400 font-mono text-sm tracking-widest">
+                          •••• {bankDetails.details.accountNumber.slice(-4)}
+                      </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-green-400 bg-green-900/20 w-fit px-2 py-1 rounded border border-green-500/20">
+                      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                      Verified & Active
+                  </div>
+              </div>
+           ) : (
+              <div className="flex flex-col items-center justify-center h-full py-2 text-center">
+                  <p className="text-slate-500 text-sm mb-3">No account linked</p>
+                  <Link href="/withdraw" className="w-full">
+                    <button className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-lg transition">
+                        + Link Account
+                    </button>
+                  </Link>
+              </div>
+           )}
+        </motion.div>
+
+        {/* Card 4: Social Account Status */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
           className="p-6 rounded-2xl bg-slate-800 border border-slate-700 shadow-xl flex flex-col justify-between">
             {user?.linkedAccounts?.length === 0 ? (
                 <>
                   <div>
                     <h3 className="text-white font-bold text-lg mb-2 flex items-center gap-2">⚠️ Action Required</h3>
-                    <p className="text-slate-400 text-sm">Verify an account to start earning.</p>
+                    <p className="text-slate-400 text-sm">Verify a social account to start earning.</p>
                   </div>
                   <Link href="/verify" className="w-full mt-4">
                     <button className="w-full py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition">Verify Now</button>
@@ -191,17 +238,20 @@ export default function Dashboard() {
             ) : (
                 <>
                    <div>
-                     <h3 className="text-white font-bold text-lg mb-2 flex items-center gap-2">
-                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> 
-                        {user.linkedAccounts.length} Linked Account{user.linkedAccounts.length > 1 ? 's' : ''}
-                     </h3>
-                     <p className="text-sm text-slate-400">
-                        Pending Earnings: <span className="text-yellow-400 font-bold">₹{pendingEarnings}</span>
-                     </p>
+                      <h3 className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-2">
+                        Social Accounts
+                      </h3>
+                      <div className="flex items-center gap-2 mb-1">
+                         <span className="text-2xl font-bold text-white">{user.linkedAccounts.length}</span>
+                         <span className="text-sm text-slate-400">Linked</span>
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        Total Pending: <span className="text-yellow-400 font-bold">₹{pendingEarnings}</span>
+                      </p>
                    </div>
                    <Link href="/verify" className="w-full mt-4">
                      <button className="w-full py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm font-bold rounded-lg transition border border-slate-600 hover:border-slate-500">
-                        + Link New Account
+                       + Link New
                      </button>
                    </Link>
                 </>
