@@ -1,42 +1,25 @@
 @import "tailwindcss";
 
 @theme {
-  /* --- Color Palette --- */
-  /* Usage in code: bg-background, text-primary, border-surface, etc. */
-  
-  --color-background: #0f172a; /* Slate 900 */
-  --color-surface: #1e293b;    /* Slate 800 */
-  
-  --color-primary: #3b82f6;    /* Blue 500 */
-  --color-primary-hover: #2563eb; /* Blue 600 */
-  
-  --color-text: #f8fafc;       /* Slate 50 */
-  --color-text-muted: #94a3b8; /* Slate 400 */
-  
-  --color-border: #334155;     /* Slate 700 */
+  --color-background: #f8fafc;
+  --color-surface: #ffffff;
+  --color-primary: #7c3aed;
+  --color-primary-hover: #6d28d9;
+  --color-text-main: #111827;
+  --color-text-muted: #64748b;
+  --color-border: #e2e8f0;
 
-  /* --- Animations --- */
-  /* Usage in code: animate-float */
-  
   --animate-float: float 6s ease-in-out infinite;
-  --animate-spin: spin 1s linear infinite;
-
   @keyframes float {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-20px); }
-  }
-  
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
+    50% { transform: translateY(-10px); }
+  } 
 }
 
-/* --- Base Styles --- */
-/* This forces the dark background on the whole body */
 @layer base {
   body {
     background-color: var(--color-background);
-    color: var(--color-text);
+    color: var(--color-text-main);
+    font-family: system-ui, -apple-system, sans-serif;
   }
 }
