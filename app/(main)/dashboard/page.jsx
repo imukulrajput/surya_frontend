@@ -264,16 +264,57 @@
 // }
 
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { Toaster } from "react-hot-toast";
-import { motion } from "framer-motion";
+import { motion, useMotionTemplate, useMotionValue } from "framer-motion";
 import api from "@/lib/axios"; 
 import AccountSelector from "@/components/AccountSelector";
 
-const WalletIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 7h-3a2 2 0 0 1-2-2V3"/><path d="M9 18a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M12 12h.01"/></svg>);
-const TaskIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-5.523 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>);
-const BankIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18"/><path d="M5 21V7"/><path d="M19 21V7"/><path d="M4 7h16"/><path d="m2 7 10-5 10 5"/><path d="M12 12v3"/></svg>);
+// --- Icons ---
+const WalletIcon = () => <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>;
+const CheckCircle = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+const BankIcon = () => <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" /></svg>;
+const ArrowRight = () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>;
+const BellIcon = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>;
+
+// --- 3D Tilt Card Component ---
+const TiltCard = ({ children, className, glowColor = "from-white/20 to-white/10" }) => {
+  const ref = useRef(null);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  const handleMouseMove = ({ clientX, clientY }) => {
+    const rect = ref.current.getBoundingClientRect();
+    mouseX.set(clientX - rect.left);
+    mouseY.set(clientY - rect.top);
+  };
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      onMouseMove={handleMouseMove}
+      className={`relative overflow-hidden rounded-[2rem] shadow-xl transition-all duration-300 group ${className}`}
+    >
+      <motion.div
+        className={`pointer-events-none absolute -inset-px opacity-0 transition duration-300 group-hover:opacity-100 bg-gradient-to-r ${glowColor}`}
+        style={{
+          maskImage: useMotionTemplate`
+            radial-gradient(
+              650px circle at ${mouseX}px ${mouseY}px,
+              white,
+              transparent
+            )
+          `,
+        }}
+      />
+      <div className="relative h-full z-10 flex flex-col">{children}</div>
+    </motion.div>
+  );
+};
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -282,8 +323,13 @@ export default function Dashboard() {
   const [announcement, setAnnouncement] = useState(null);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [bankDetails, setBankDetails] = useState(null);
+  const [greeting, setGreeting] = useState("Good Morning");
 
   useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour >= 12 && hour < 17) setGreeting("Good Afternoon");
+    else if (hour >= 17) setGreeting("Good Evening");
+    
     const todayStr = new Date().toDateString();
     localStorage.setItem('dashboardDate', todayStr);
     const interval = setInterval(() => {
@@ -306,28 +352,18 @@ export default function Dashboard() {
       if (userRes.status === "fulfilled") {
           const userData = userRes.value.data.user;
           setUser(userData);
-          if (userData.linkedAccounts?.length > 0) {
-            setSelectedAccount(userData.linkedAccounts[0]);
-          }
+          if (userData.linkedAccounts?.length > 0) setSelectedAccount(userData.linkedAccounts[0]);
       }
-
       if (walletRes.status === "fulfilled" && walletRes.value.data.methods.length > 0) {
           setBankDetails(walletRes.value.data.methods[0]); 
       }
-
-    } catch (error) {
-      console.error("Dashboard Load Error:", error);
-    } finally {
-      setLoading(false);
-    }
+    } catch (error) { console.error(error); } finally { setLoading(false); }
   }, []);
 
   useEffect(() => {
     if (!loading) {
         const query = selectedAccount ? `?accountId=${selectedAccount._id}` : "";
-        api.get(`/tasks/daily${query}`)
-           .then(res => setTasks(res.data.tasks))
-           .catch(err => console.error(err));
+        api.get(`/tasks/daily${query}`).then(res => setTasks(res.data.tasks)).catch(err => console.error(err));
     }
   }, [selectedAccount, loading]);
 
@@ -340,130 +376,234 @@ export default function Dashboard() {
 
   const completedCount = tasks.filter(t => t.isCompleted).length;
   const totalCount = tasks.length; 
-  const pendingEarnings = completedCount * 2.5; 
   const progressPercentage = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+  const pendingEarnings = completedCount * 2.5;
 
-  if (loading) return <div className="h-96 flex items-center justify-center text-slate-500 font-medium">Loading Dashboard...</div>;
+  const radius = 30;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (progressPercentage / 100) * circumference;
+
+  if (loading) return (
+    <div className="h-screen flex items-center justify-center bg-slate-50">
+        <div className="relative">
+            <div className="w-16 h-16 border-4 border-violet-100 rounded-full animate-spin border-t-violet-600"></div>
+            <div className="absolute inset-0 flex items-center justify-center font-bold text-violet-600 text-xs">T</div>
+        </div>
+    </div>
+  );
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      <Toaster position="top-right" toastOptions={{ style: { background: '#fff', color: '#333', border: '1px solid #e2e8f0' } }}/>
+    <div className="min-h-screen pb-20 pt-8 px-4 sm:px-8 max-w-[1400px] mx-auto space-y-10">
       
-      <div className="flex flex-col md:flex-row justify-between md:items-end gap-4">
-        <div>
-          <h1 className="text-4xl font-extrabold text-slate-900 mb-1 tracking-tight">Dashboard</h1>
-          <p className="text-slate-500 font-medium">Welcome back, {user?.fullName} 👋</p>
-        </div>
-        <div className="text-left md:text-right">
-            <p className="text-xs text-slate-400 uppercase tracking-widest font-bold">Today's Date</p>
-            <p className="text-slate-700 font-mono font-bold text-lg">{new Date().toLocaleDateString()}</p>
-        </div>
+      <Toaster   
+          position="top-right" 
+          containerStyle={{ top: 80, zIndex: 99999 }} 
+          toastOptions={{ style: { background: '#1e293b', color: '#fff', border: '1px solid #334155' } }}
+      />
+
+      {/* --- Ambient Background --- */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+          <div className="absolute top-[-10%] left-[20%] w-[800px] h-[800px] bg-violet-100/50 rounded-full blur-[120px] mix-blend-multiply opacity-70 animate-pulse"></div>
+          <div className="absolute top-[10%] right-[-10%] w-[600px] h-[600px] bg-blue-100/50 rounded-full blur-[120px] mix-blend-multiply opacity-70"></div>
       </div>
 
-      {user?.linkedAccounts?.length > 0 && (
-         <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-             <div className="flex justify-between items-center mb-4">
-                <label className="text-xs text-slate-400 uppercase font-extrabold tracking-wide">Viewing Data For</label>
-                <Link href="/verify" className="text-xs text-violet-600 hover:text-violet-700 font-bold bg-violet-50 px-3 py-1 rounded-lg transition">+ Add Another</Link>
-             </div>
-             <AccountSelector 
-                accounts={user.linkedAccounts} 
-                selectedAccountId={selectedAccount?._id}
-                onSelect={(id) => setSelectedAccount(user.linkedAccounts.find(a => a._id === id))}
-             />
-         </div>
-      )}
+      {/* --- Header --- */}
+      <div className="flex flex-col xl:flex-row justify-between xl:items-end gap-6">
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+           <h1 className="text-5xl md:text-6xl font-black text-slate-900 tracking-tight leading-tight mb-2">
+             {greeting}, <br/>
+             <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-blue-600">
+               {user?.fullName?.split(" ")[0] || "Earner"}
+             </span>
+           </h1>
+           <p className="text-slate-500 font-medium text-lg">Let's make today productive.</p>
+        </motion.div>
 
+        {user?.linkedAccounts?.length > 0 && (
+           <motion.div 
+             initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+             className="bg-white/70 backdrop-blur-xl p-1.5 rounded-2xl border border-slate-200 shadow-lg flex items-center gap-2 max-w-md"
+           >
+              <div className="flex-1">
+                 <AccountSelector 
+                    accounts={user.linkedAccounts} 
+                    selectedAccountId={selectedAccount?._id}
+                    onSelect={(id) => setSelectedAccount(user.linkedAccounts.find(a => a._id === id))}
+                 />
+              </div>
+              <Link href="/verify" className="p-3 hover:bg-violet-50 rounded-xl text-violet-600 transition-colors">
+                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+              </Link>
+           </motion.div>
+        )}
+      </div>
+
+      {/* --- Announcement --- */}
       {announcement?.isActive && (
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-amber-50 border border-amber-200 text-amber-800 px-6 py-4 rounded-xl flex items-center gap-3 shadow-sm">
-             <span className="text-xl">📢</span>
-             <span className="font-semibold">{announcement.message}</span>
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100 p-4 flex items-start gap-4 shadow-sm"
+        >
+          <div className="p-2 bg-amber-100 text-amber-600 rounded-lg shrink-0"><BellIcon /></div>
+          <div>
+             <h4 className="font-bold text-amber-900 text-sm uppercase tracking-wide mb-1">Update</h4>
+             <p className="text-amber-800 font-medium text-sm md:text-base leading-relaxed">{announcement.message}</p>
+          </div>
         </motion.div>
       )}
 
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <motion.div className="p-6 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-xl shadow-violet-200 relative overflow-hidden group">
-           <div className="absolute top-0 right-0 p-4 opacity-20"><WalletIcon /></div>
-           <h3 className="text-violet-100 text-sm font-bold uppercase tracking-wider mb-1">Total Balance</h3>
-           <span className="text-4xl font-extrabold tracking-tight">₹ {user?.walletBalance || 0}</span>
-           <Link href="/withdraw" className="mt-6 block">
-             <button className="w-full py-2.5 bg-white/20 hover:bg-white/30 text-white text-sm font-bold rounded-lg transition backdrop-blur-sm">
-                Manage Wallet
-             </button>
-           </Link>
-        </motion.div>
+      {/* --- Grid Layout --- */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-[minmax(220px,auto)]">
 
-        <motion.div className="p-6 rounded-2xl bg-white border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-           <div className="flex justify-between items-start mb-4">
-             <div>
-               <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-1">Daily Tasks</h3>
-               <p className="text-2xl font-black text-slate-800">{completedCount} <span className="text-slate-300 text-lg">/ {totalCount}</span></p>
+        {/* 1. Wallet Card (LIGHTER, VIBRANT GRADIENT) */}
+        <TiltCard className="md:col-span-2 bg-gradient-to-br from-violet-600 to-blue-600 text-white group relative overflow-hidden min-h-[280px] shadow-violet-200">
+            {/* Lighter, smoother overlay instead of black */}
+            <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/20 rounded-full blur-[80px]"></div>
+            
+            <div className="flex flex-col justify-between h-full p-8 relative z-10">
+                <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl border border-white/20 text-white"><WalletIcon /></div>
+                        <div>
+                            <p className="text-violet-100 text-xs font-bold uppercase tracking-widest">Available Balance</p>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-5xl font-black tracking-tighter text-white">₹{user?.walletBalance || 0}</span>
+                                <span className="text-green-300 text-sm font-bold">+20%</span>
+                            </div>
+                        </div>
+                    </div>
+                    {/* Fixed Verified User Badge Visibility */}
+                    <div className="hidden sm:block">
+                       <span className="px-3 py-1.5 rounded-full bg-white/20 border border-white/20 text-xs font-bold text-white shadow-sm flex items-center gap-2 backdrop-blur-sm">
+                          <span className="w-1.5 h-1.5 bg-green-300 rounded-full animate-pulse"></span>
+                          Verified User
+                       </span>
+                    </div>
+                </div>
+
+                <div className="flex items-end justify-between mt-8">
+                    <div className="space-y-1">
+                        {/* High Contrast White Text */}
+                        <p className="text-violet-200 text-[10px] uppercase font-bold tracking-widest">Card Holder</p>
+                        <p className="font-mono text-xl text-white font-black tracking-wider drop-shadow-md">{user?.fullName?.toUpperCase()}</p>
+                    </div>
+                    <Link href="/withdraw">
+                        <motion.button 
+                            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                            className="bg-white text-violet-600 px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-slate-50 transition-all shadow-lg"
+                        >
+                            Withdraw Funds <ArrowRight />
+                        </motion.button>
+                    </Link>
+                </div>
+            </div>
+        </TiltCard>
+
+        {/* 2. Task Progress */}
+        <TiltCard className="p-6 sm:p-8 bg-white border border-slate-100">
+            <div className="flex flex-col h-full justify-between">
+                <div className="flex justify-between items-start mb-6">
+                    <div>
+                        <h3 className="text-xl font-bold text-slate-900">Daily Goals</h3>
+                        <p className="text-slate-500 text-sm font-medium mt-1">Keep the streak alive!</p>
+                    </div>
+                    <div className="relative w-20 h-20 shrink-0">
+                        <svg className="transform -rotate-90 w-20 h-20">
+                            <circle cx="40" cy="40" r={radius} stroke="#e2e8f0" strokeWidth="8" fill="transparent" />
+                            <circle cx="40" cy="40" r={radius} stroke="#7c3aed" strokeWidth="8" fill="transparent" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" className="transition-all duration-1000 ease-out" />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center font-bold text-slate-700 text-sm">
+                            {Math.round(progressPercentage)}%
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div className="flex justify-between items-center mb-4">
+                        <span className="text-3xl font-black text-slate-900">{completedCount}<span className="text-slate-300 text-xl">/{totalCount}</span></span>
+                        <span className="text-xs font-bold bg-violet-50 text-violet-600 px-2 py-1 rounded-lg">Tasks Done</span>
+                    </div>
+                    <Link href="/tasks" className="w-full block">
+                        <button className="w-full py-3 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl transition shadow-lg shadow-violet-200 flex justify-center items-center gap-2 group-hover:gap-3">
+                            {completedCount === totalCount ? "View Rewards" : "Start Earning"} <ArrowRight />
+                        </button>
+                    </Link>
+                </div>
+            </div>
+        </TiltCard>
+
+        {/* 3. Bank Method */}
+        <TiltCard className="p-6 sm:p-8 bg-gradient-to-br from-white to-slate-50 border border-slate-100">
+             <div className="flex flex-col h-full">
+                 <div className="flex items-center gap-3 mb-4 shrink-0">
+                    <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl"><BankIcon /></div>
+                    <h3 className="text-lg font-bold text-slate-800">Payout Method</h3>
+                 </div>
+
+                 {bankDetails ? (
+                    <div className="flex-1 flex flex-col justify-center space-y-4">
+                        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/5 rounded-bl-full"></div>
+                            <p className="text-slate-900 font-bold truncate">{bankDetails.details.bankName}</p>
+                            <p className="text-slate-400 font-mono text-sm tracking-widest mt-1">•••• {bankDetails.details.accountNumber.slice(-4)}</p>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-600">
+                            <CheckCircle /> Verified & Ready
+                        </div>
+                    </div>
+                 ) : (
+                    <div className="flex-1 flex flex-col justify-center items-center text-center">
+                        <p className="text-slate-400 text-sm mb-4">No bank account linked</p>
+                        <Link href="/withdraw" className="w-full">
+                            <button className="w-full py-3 border border-dashed border-slate-300 hover:border-violet-500 hover:text-violet-600 text-slate-500 font-bold rounded-xl transition whitespace-nowrap">
+                                + Link Bank Account
+                            </button>
+                        </Link>
+                    </div>
+                 )}
              </div>
-             <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl"><TaskIcon /></div>
-           </div>
-           <div className="w-full bg-slate-100 rounded-full h-3 mb-2 overflow-hidden">
-             <div className="bg-blue-600 h-3 rounded-full transition-all duration-1000" style={{ width: `${progressPercentage}%` }}></div>
-           </div>
-           <div className="flex justify-between text-xs font-medium text-slate-500 mb-4">
-              <span>{Math.round(progressPercentage)}% Complete</span>
-           </div>
-           <Link href="/tasks">
-             <button className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition shadow-lg shadow-blue-100">
-                {totalCount > 0 && completedCount === totalCount ? "All Done! 🎉" : "Continue Tasks"}
-             </button>
-           </Link>
-        </motion.div>
+        </TiltCard>
 
-        <motion.div className="p-6 rounded-2xl bg-white border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col justify-between">
-           <div className="flex justify-between items-start mb-2">
-             <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider">Bank Details</h3>
-             <div className="p-2.5 bg-green-50 text-green-600 rounded-xl"><BankIcon /></div>
-           </div>
-           {bankDetails ? (
-              <div>
-                  <p className="text-xl font-bold text-slate-800 truncate" title={bankDetails.details.bankName}>{bankDetails.details.bankName}</p>
-                  <p className="text-slate-500 font-mono text-sm tracking-widest mt-1">•••• {bankDetails.details.accountNumber.slice(-4)}</p>
-                  <div className="mt-4 flex items-center gap-2 text-xs font-bold text-green-700 bg-green-50 w-fit px-3 py-1 rounded-full">
-                      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Verified
-                  </div>
-              </div>
-           ) : (
-              <div className="text-center py-2">
-                  <p className="text-slate-400 text-sm mb-3">No account linked</p>
-                  <Link href="/withdraw">
-                    <button className="w-full py-2.5 border-2 border-dashed border-slate-200 hover:border-violet-400 text-slate-400 hover:text-violet-600 text-sm font-bold rounded-xl transition">
-                        + Link Now
-                    </button>
-                  </Link>
-              </div>
-           )}
-        </motion.div>
+        {/* 4. Action / Pending */}
+        <TiltCard className="md:col-span-2 p-8 relative overflow-hidden bg-white border border-slate-100">
+            <div className="absolute right-0 top-0 w-1/2 h-full bg-gradient-to-l from-orange-50 to-transparent pointer-events-none"></div>
+            
+            <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6 h-full">
+                {user?.linkedAccounts?.length === 0 ? (
+                    <>
+                        <div className="flex-1 text-center md:text-left">
+                            <h3 className="text-2xl font-black text-slate-900 mb-2">⚠️ Activation Required</h3>
+                            <p className="text-slate-500 font-medium">To ensure quality, we require you to link at least one active social media profile.</p>
+                        </div>
+                        <Link href="/verify" className="w-full md:w-auto">
+                            <button className="w-full md:w-auto px-8 py-4 bg-slate-900 text-white font-bold rounded-xl shadow-xl hover:scale-105 transition-transform">
+                                Link Account Now
+                            </button>
+                        </Link>
+                    </>
+                ) : (
+                    <>
+                        <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></span>
+                                <span className="text-sm font-bold text-orange-600 uppercase tracking-wider">Pending Review</span>
+                            </div>
+                            <div className="flex items-end gap-3">
+                                <h3 className="text-5xl font-black text-slate-900 tracking-tighter">₹{pendingEarnings}</h3>
+                                <p className="text-slate-400 font-medium mb-2">estimated earnings</p>
+                            </div>
+                        </div>
+                         <div className="bg-orange-50/50 p-6 rounded-2xl border border-orange-100 max-w-sm hidden md:block">
+                            <p className="text-sm text-slate-600 font-medium leading-relaxed">
+                                Your submitted tasks are being reviewed. Funds usually clear within 24 hours.
+                            </p>
+                        </div>
+                    </>
+                )}
+            </div>
+        </TiltCard>
 
-        <motion.div className="p-6 rounded-2xl bg-white border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col justify-between">
-            {user?.linkedAccounts?.length === 0 ? (
-                <>
-                  <div>
-                    <h3 className="text-slate-800 font-bold text-lg mb-2 flex items-center gap-2">⚠️ Verify Account</h3>
-                    <p className="text-slate-500 text-sm leading-relaxed">You must link a social profile to start earning money.</p>
-                  </div>
-                  <Link href="/verify" className="w-full mt-4">
-                    <button className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg transition shadow-lg">Link Now</button>
-                  </Link>
-                </>
-            ) : (
-                <>
-                   <div>
-                      <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Pending Earnings</h3>
-                      <p className="text-3xl font-black text-slate-800">₹{pendingEarnings}</p>
-                      <p className="text-xs text-slate-500 mt-1">From unapproved tasks</p>
-                   </div>
-                   <Link href="/verify" className="w-full mt-4">
-                     <button className="w-full py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-600 text-sm font-bold rounded-lg transition">Link New Account</button>
-                   </Link>
-                </>
-            )}
-        </motion.div>
-      </section>
+      </div>
     </div>
   );
 }

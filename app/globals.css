@@ -9,6 +9,8 @@
   --color-text-muted: #64748b;
   --color-border: #e2e8f0;
 
+  --font-sans: var(--font-roboto), system-ui, -apple-system, sans-serif; 
+
   --animate-float: float 6s ease-in-out infinite;
   @keyframes float {
     0%, 100% { transform: translateY(0); }
@@ -20,6 +22,6 @@
   body {
     background-color: var(--color-background);
     color: var(--color-text-main);
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: var(--font-sans);
   }
 }

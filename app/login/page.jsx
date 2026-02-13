@@ -73,6 +73,10 @@ import toast, { Toaster } from "react-hot-toast";
 import { AuthLayout, AuthInput, AuthButton } from "@/components/AuthUI";
 import api from "@/lib/axios";
 
+// Icons
+const EmailIcon = <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" /></svg>;
+const LockIcon = <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>;
+
 export default function Login() {
   const router = useRouter();
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -99,15 +103,31 @@ export default function Login() {
   };
 
   return (
-    <AuthLayout title="Hey, hello!" subtitle="Login and start to earn money!">
+    <AuthLayout title="Welcome Back" subtitle="Log in to continue earning rewards">
       <Toaster position="top-center" toastOptions={{ style: { background: '#333', color: '#fff' } }}/>
       
       <form onSubmit={handleSubmit} className="space-y-2">
-        <AuthInput label="Email" name="email" type="email" placeholder="john@example.com" value={formData.email} onChange={handleChange} />
-        <AuthInput label="Password" name="password" type="password" placeholder="••••••••" value={formData.password} onChange={handleChange} />
+        <AuthInput 
+            label="Email Address" 
+            name="email" 
+            type="email" 
+            placeholder="john@example.com" 
+            value={formData.email} 
+            onChange={handleChange} 
+            icon={EmailIcon}
+        />
+        <AuthInput 
+            label="Password" 
+            name="password" 
+            type="password" 
+            placeholder="••••••••" 
+            value={formData.password} 
+            onChange={handleChange} 
+            icon={LockIcon}
+        />
         
         <div className="flex justify-end mb-8">
-          <Link href="/forgot-password" className="text-sm font-semibold text-violet-600 hover:text-violet-800 transition-colors">
+          <Link href="/forgot-password" className="text-sm font-bold text-violet-600 hover:text-blue-600 transition-colors">
             Forgot password?
           </Link>
         </div>
@@ -115,9 +135,9 @@ export default function Login() {
         <AuthButton text="Sign In" isLoading={loading} />
       </form>
       
-      <p className="text-center text-slate-400 mt-8 text-sm font-medium">
-        Or <Link href="/signup" className="text-slate-600 hover:text-violet-600 font-bold transition-colors underline">create an account</Link>
+      <p className="text-center text-slate-500 mt-8 text-sm font-medium">
+        Don't have an account? <Link href="/signup" className="text-violet-600 hover:text-blue-600 font-bold transition-colors">Create one now</Link>
       </p>
     </AuthLayout>
   );
-}   
+} 

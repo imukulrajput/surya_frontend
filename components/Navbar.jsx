@@ -105,6 +105,13 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import api from "@/lib/axios";
 
+// Logo Icon from Screenshot (Purple T square)
+const LogoIcon = () => (
+  <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center text-white font-black text-xl shadow-lg shadow-violet-200">
+    T
+  </div>
+);
+
 const navItems = [
   { name: "Overview", path: "/dashboard" },
   { name: "Tasks", path: "/tasks" },
@@ -134,18 +141,21 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200">
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100">
+      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         
-        <Link href={isLanding ? "/" : "/dashboard"} className="flex items-center gap-2 group">
-          <span className="font-black text-2xl tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-blue-600">
-            MY WORK
+        {/* Logo Section */}
+        <Link href={isLanding ? "/" : "/dashboard"} className="flex items-center gap-2.5 group">
+          <LogoIcon />
+          <span className="font-black text-xl tracking-tight text-slate-900 group-hover:text-violet-600 transition">
+              MyWork 
           </span>
         </Link>
 
         {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-6">
+        <div className="hidden md:flex items-center gap-8">
           {!isLanding ? (
+            // Logged In Menu
             <>
               {navItems.map((item) => (
                 <Link key={item.path} href={item.path}>
@@ -161,16 +171,18 @@ export default function Navbar() {
               </button>
             </>
           ) : (
-            <div className="flex gap-4">
-              <Link href="/login">
-                 <button className="text-slate-600 font-bold text-sm hover:text-violet-600">Login</button>
-              </Link>
-              <Link href="/signup">
-                 <button className="px-5 py-2 bg-violet-600 text-white rounded-lg font-bold text-sm hover:bg-violet-700 transition shadow-lg shadow-violet-200">
-                    Get Started
-                 </button>
-              </Link>
-            </div>
+            // Landing Page Menu (Matches Screenshot: About, How It Works, Login, Get Started)
+            <>
+                <Link href="#" className="text-sm font-bold text-slate-500 hover:text-slate-900">About</Link>
+                <Link href="#" className="text-sm font-bold text-slate-500 hover:text-slate-900">How It Works</Link>
+                <Link href="/login" className="text-sm font-bold text-slate-500 hover:text-slate-900">Login</Link>
+                
+                <Link href="/signup">
+                    <button className="px-6 py-2.5 bg-violet-600 text-white rounded-lg font-bold text-sm hover:bg-violet-700 transition shadow-lg shadow-violet-200 transform hover:scale-105">
+                        Get Started
+                    </button>
+                </Link>
+            </>
           )}
         </div>
 
@@ -184,7 +196,7 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-white border-b border-slate-100 px-6 py-4 space-y-4 absolute w-full shadow-xl">
+        <div className="md:hidden bg-white border-b border-slate-100 px-6 py-6 space-y-4 absolute w-full shadow-xl z-50">
            {!isLanding ? (
              <>
                {navItems.map((item) => (
@@ -197,13 +209,16 @@ export default function Navbar() {
                <button onClick={handleLogout} className="text-red-500 font-bold block py-2 w-full text-left">Logout</button>
              </>
            ) : (
-             <div className="flex flex-col gap-3">
+             <div className="flex flex-col gap-4">
+               <Link href="#" className="text-slate-600 font-bold">About</Link>
+               <Link href="#" className="text-slate-600 font-bold">How It Works</Link>
+               <div className="h-px bg-slate-100 my-2"></div>
                <Link href="/login"><button className="w-full py-3 rounded-lg border-2 border-violet-600 text-violet-600 font-bold">Login</button></Link>
-               <Link href="/signup"><button className="w-full py-3 rounded-lg bg-violet-600 text-white font-bold">Sign Up</button></Link>
+               <Link href="/signup"><button className="w-full py-3 rounded-lg bg-violet-600 text-white font-bold">Get Started</button></Link>
              </div>
            )}
         </div>
       )}
     </nav>
   );
-}  
+}   
