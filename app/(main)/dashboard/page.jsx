@@ -468,7 +468,7 @@ export default function Dashboard() {
                             <p className="text-violet-100 text-xs font-bold uppercase tracking-widest">Available Balance</p>
                             <div className="flex items-baseline gap-1">
                                 <span className="text-5xl font-black tracking-tighter text-white">₹{user?.walletBalance || 0}</span>
-                                <span className="text-green-300 text-sm font-bold">+20%</span>
+                                {/* <span className="text-green-300 text-sm font-bold">+20%</span> */}
                             </div>
                         </div>
                     </div>

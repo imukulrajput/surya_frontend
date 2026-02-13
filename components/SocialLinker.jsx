@@ -245,6 +245,7 @@
 //     </div>
 //   );
 // }
+
 "use client";
 import { useState, useEffect } from "react";
 import api from "@/lib/axios";
@@ -266,11 +267,9 @@ export default function SocialLinker({ onSuccess }) {
   const [verificationCode, setVerificationCode] = useState(null);
   const [linkedAccounts, setLinkedAccounts] = useState([]);
 
-  // Fetch Accounts
   useEffect(() => { fetchAccounts(); }, []);
   const fetchAccounts = async () => { try { const { data } = await api.get("/users/me"); setLinkedAccounts(data.user.linkedAccounts || []); } catch (e) {} };
 
-  // Actions
   const generateCode = async () => {
     setLoading(true);
     try { const { data } = await api.get("/social/generate-code"); setVerificationCode(data.code); setStep(2); } 
@@ -278,122 +277,79 @@ export default function SocialLinker({ onSuccess }) {
   };
 
   const verifyAccount = async () => {
-    if (!url) return toast.error("Please enter your profile URL");
+    if (!url) return toast.error("Enter profile URL");
     setLoading(true);
     try {
       await api.post("/social/verify", { platform, profileUrl: url.trim() });
-      toast.success("Profile Verified Successfully!"); 
+      toast.success("Linked Successfully!"); 
       fetchAccounts(); 
       if (onSuccess) onSuccess();
-      // Reset
       setUrl(""); setStep(1); setVerificationCode(null);
     } catch (error) { 
-        toast.error(error.response?.data?.message || "Verification Failed. Check URL."); 
+        toast.error(error.response?.data?.message || "Verification Failed"); 
     } finally { 
         setLoading(false); 
     }
   };
 
-  // Theme Configuration
   const platformConfig = {
-      Moj: { 
-          gradient: "from-orange-500 to-amber-500", 
-          border: "border-orange-200",
-          shadow: "shadow-orange-500/20", 
-          icon: "🔥", 
-          label: "Moj App",
-          accentText: "text-orange-600", 
-          accentBg: "bg-orange-50" 
-      },
-      ShareChat: { 
-          gradient: "from-violet-600 to-fuchsia-600", 
-          border: "border-violet-200",
-          shadow: "shadow-violet-500/20", 
-          icon: "💬", 
-          label: "ShareChat",
-          accentText: "text-violet-600", 
-          accentBg: "bg-violet-50" 
-      }
+      Moj: { gradient: "from-orange-500 to-amber-500", shadow: "shadow-orange-500/20", icon: "🔥", label: "Moj", accentText: "text-orange-600" },
+      ShareChat: { gradient: "from-violet-600 to-fuchsia-600", shadow: "shadow-violet-500/20", icon: "💬", label: "ShareChat", accentText: "text-violet-600" }
   };
 
   const currentTheme = platformConfig[platform];
 
   return (
-    <div className="space-y-8 w-full max-w-lg mx-auto">
-      {/* --- FIX APPLIED HERE: Added containerStyle with zIndex and top offset --- */}
-      <Toaster 
-          position="top-center" 
-          containerStyle={{
-              top: 80, // Moves toast down so it doesn't hide behind navbar
-              zIndex: 99999, // Forces it to stay on top of everything
-          }}
-          toastOptions={{ 
-              style: { background: '#1e293b', color: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' } 
-          }}
-      />
+    <div className="space-y-6 w-full max-w-lg mx-auto">
+      <Toaster position="top-center" containerStyle={{ top: 80, zIndex: 99999 }} toastOptions={{ style: { background: '#1e293b', color: '#fff' } }}/>
       
-      {/* --- Section 1: Active Accounts --- */}
+      {/* Active Accounts List */}
       {linkedAccounts.length > 0 && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mb-6">
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Connected Profiles
-              </h3>
-              <div className="grid gap-3">
-                  {linkedAccounts.map((acc, i) => {
-                      const theme = platformConfig[acc.platform] || platformConfig.Moj;
-                      return (
-                          <div key={i} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-                              <div className="flex items-center gap-4">
-                                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-gradient-to-br ${theme.gradient} text-white shadow-lg`}>
-                                      {theme.icon}
-                                  </div>
-                                  <div>
-                                      <h4 className="font-bold text-slate-800 text-sm leading-tight">{acc.platform}</h4>
-                                      <p className="text-xs text-slate-400 font-mono">@{acc.username || "verified_user"}</p>
-                                  </div>
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="grid gap-3">
+              {linkedAccounts.map((acc, i) => {
+                  const theme = platformConfig[acc.platform] || platformConfig.Moj;
+                  return (
+                      <div key={i} className="flex items-center justify-between p-3 md:p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                          <div className="flex items-center gap-3">
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg bg-gradient-to-br ${theme.gradient} text-white`}>
+                                  {theme.icon}
                               </div>
-                              <div className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-[10px] font-bold border border-green-100 flex items-center gap-1">
-                                  <CheckCircleIcon /> Active
+                              <div className="min-w-0">
+                                  <h4 className="font-bold text-slate-800 text-sm">{acc.platform}</h4>
+                                  <p className="text-xs text-slate-400 font-mono truncate max-w-[120px]">@{acc.username || "user"}</p>
                               </div>
                           </div>
-                      );
-                  })}
-              </div>
+                          <div className="bg-green-50 text-green-700 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-green-100 shrink-0">
+                              Active
+                          </div>
+                      </div>
+                  );
+              })}
           </motion.div>  
       )}
 
-      {/* --- Section 2: The "Magic" Linker Card --- */}
-      <motion.div 
-        layout
-        className={`relative bg-white rounded-[2rem] p-1 shadow-2xl transition-all duration-500 ${currentTheme.shadow}`}
-      >
-        {/* Animated Gradient Border */}
-        <div className={`absolute inset-0 rounded-[2rem] bg-gradient-to-br ${currentTheme.gradient} opacity-20`} />
-        
-        <div className="relative bg-white rounded-[1.8rem] p-6 md:p-8 overflow-hidden">
+      {/* Main Card */}
+      <motion.div layout className={`bg-white rounded-[2rem] shadow-xl ${currentTheme.shadow} border border-slate-100 overflow-hidden`}>
+        {/* Responsive Padding: p-5 on mobile, p-8 on desktop */}
+        <div className="p-5 md:p-8">
              
              {/* Header */}
-             <div className="flex justify-between items-center mb-8">
+             <div className="flex justify-between items-start mb-6">
                 <div>
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Connect Profile</h2>
+                    <h2 className="text-xl md:text-2xl font-black text-slate-900">Connect Profile</h2>
                     <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Step {step} of 2</p>
                 </div>
                 {step === 2 && (
-                    <button onClick={() => setStep(1)} className="text-xs font-bold text-slate-400 hover:text-slate-600 flex items-center gap-1 transition-colors">
-                        <RefreshIcon /> Change
+                    <button onClick={() => setStep(1)} className="text-xs font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-lg hover:text-slate-600 transition-colors">
+                        Change
                     </button>
                 )}
              </div>
 
              <AnimatePresence mode="wait">
                 {step === 1 ? (
-                    <motion.div 
-                        key="step1"
-                        initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-                        className="space-y-6"
-                    >
-                        {/* Platform Selector Grid */}
-                        <div className="grid grid-cols-2 gap-4">
+                    <motion.div key="step1" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
+                        <div className="grid grid-cols-2 gap-3">
                             {Object.keys(platformConfig).map((p) => {
                                 const isSelected = platform === p;
                                 const theme = platformConfig[p];
@@ -401,93 +357,38 @@ export default function SocialLinker({ onSuccess }) {
                                     <button 
                                         key={p}
                                         onClick={() => setPlatform(p)}
-                                        className={`relative group p-4 h-32 rounded-2xl border-2 text-left transition-all duration-300 flex flex-col justify-between overflow-hidden ${
-                                            isSelected 
-                                            ? `border-transparent bg-slate-50 shadow-inner` 
-                                            : "border-slate-100 bg-white hover:border-slate-200 hover:shadow-lg"
+                                        className={`p-3 md:p-4 h-24 md:h-32 rounded-2xl border-2 text-left transition-all flex flex-col justify-between ${
+                                            isSelected ? `border-transparent bg-slate-50 ring-2 ring-slate-100` : "border-slate-100 bg-white"
                                         }`}
                                     >
-                                        {isSelected && (
-                                            <motion.div 
-                                                layoutId="activeRing"
-                                                className={`absolute inset-0 border-2 rounded-2xl opacity-100 z-10`}
-                                                style={{ borderColor: isSelected ? 'transparent' : '' }} // Custom border handled by glow
-                                            >
-                                                 <div className={`absolute inset-0 opacity-10 bg-gradient-to-br ${theme.gradient}`} />
-                                                 <div className={`absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r ${theme.gradient}`} />
-                                            </motion.div>
-                                        )}
-                                        
-                                        <div className="relative z-20 flex justify-between items-start w-full">
-                                            <span className="text-3xl filter drop-shadow-sm">{theme.icon}</span>
-                                            {isSelected && <div className={`w-2 h-2 rounded-full bg-current ${theme.accentText}`} />}
-                                        </div>
-                                        <span className={`relative z-20 font-bold text-sm ${isSelected ? 'text-slate-900' : 'text-slate-500'}`}>
-                                            {theme.label}
-                                        </span>
+                                        <span className="text-2xl md:text-3xl">{theme.icon}</span>
+                                        <span className={`font-bold text-sm ${isSelected ? 'text-slate-900' : 'text-slate-400'}`}>{theme.label}</span>
                                     </button>
                                 );
                             })}
                         </div>
-
-                        {/* CTA Button */}
-                        <button 
-                            onClick={generateCode} 
-                            disabled={loading} 
-                            className={`w-full py-4 rounded-xl font-bold text-white shadow-xl flex items-center justify-center gap-3 transition-all active:scale-95 bg-gradient-to-r ${currentTheme.gradient}`}
-                        >
-                            {loading ? (
-                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            ) : (
-                                <>Continue <ArrowRight /></>
-                            )}
+                        <button onClick={generateCode} disabled={loading} className={`w-full py-4 rounded-xl font-bold text-white shadow-lg flex items-center justify-center gap-2 bg-gradient-to-r ${currentTheme.gradient}`}>
+                            {loading ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>Continue <ArrowRight /></>}
                         </button>
                     </motion.div>
                 ) : (
-                    <motion.div 
-                        key="step2"
-                        initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
-                        className="space-y-8"
-                    >
-                        {/* The Code Ticket */}
-                        <div className="relative group cursor-pointer" onClick={() => {navigator.clipboard.writeText(verificationCode); toast.success("Code copied!");}}>
-                            <div className="absolute inset-0 bg-slate-900 rounded-2xl transform translate-y-2 translate-x-0 transition-transform group-hover:translate-y-3 opacity-10"></div>
-                            <div className="relative bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-6 text-center hover:bg-white hover:border-violet-400 transition-colors">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Verification Code</p>
-                                <div className="text-3xl font-mono font-black text-slate-800 tracking-[0.2em]">{verificationCode}</div>
-                                <div className="mt-4 flex items-center justify-center gap-2 text-xs font-bold text-violet-600 bg-violet-50 w-fit mx-auto px-3 py-1 rounded-full">
-                                    <CopyIcon /> Tap to Copy
-                                </div>
-                            </div>
+                    <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6">
+                        {/* Code Box */}
+                        <div onClick={() => {navigator.clipboard.writeText(verificationCode); toast.success("Copied!");}} className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-5 text-center cursor-pointer active:scale-95 transition-transform">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Tap to Copy Code</p>
+                            <div className="text-2xl md:text-3xl font-mono font-black text-slate-800 break-all">{verificationCode}</div>
                         </div>
 
-                        {/* Instructions */}
-                        <div className="text-center text-sm text-slate-500 font-medium">
-                            Paste this code into your <span className={`font-bold ${currentTheme.accentText}`}>{platform} Bio</span> to verify ownership.
+                        <p className="text-center text-xs text-slate-500 px-4">
+                            Paste into <span className={`font-bold ${currentTheme.accentText}`}>{platform} Bio</span> then enter link:
+                        </p>
+
+                        <div className="relative">
+                            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400"><LinkIcon /></div>
+                            <input type="text" placeholder="Profile Link..." value={url} onChange={(e) => setUrl(e.target.value)} className="w-full bg-slate-50 border border-slate-200 text-slate-900 pl-10 pr-4 py-3.5 rounded-xl font-bold focus:ring-2 focus:ring-slate-200 outline-none" />
                         </div>
 
-                        {/* URL Input */}
-                        <div className="space-y-2">
-                             <div className="relative">
-                                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400">
-                                    <LinkIcon />
-                                </div>
-                                <input 
-                                    type="text" 
-                                    placeholder={`Paste your ${platform} profile link...`} 
-                                    value={url} 
-                                    onChange={(e) => setUrl(e.target.value)} 
-                                    className="w-full bg-white border border-slate-200 text-slate-900 pl-11 pr-4 py-4 rounded-xl font-bold focus:ring-2 focus:ring-violet-500 focus:border-transparent outline-none shadow-sm transition-all" 
-                                />
-                             </div>
-                        </div>
-
-                        {/* Verify Button */}
-                        <button 
-                            onClick={verifyAccount} 
-                            disabled={loading} 
-                            className={`w-full py-4 rounded-xl font-bold text-white shadow-xl flex items-center justify-center gap-2 transition-transform active:scale-95 bg-slate-900 hover:bg-slate-800`}
-                        >
+                        <button onClick={verifyAccount} disabled={loading} className="w-full py-4 rounded-xl font-bold text-white shadow-lg bg-slate-900">
                             {loading ? "Verifying..." : "Verify Profile"}
                         </button>
                     </motion.div>
@@ -497,4 +398,4 @@ export default function SocialLinker({ onSuccess }) {
       </motion.div>
     </div>
   );
-}
+} 
