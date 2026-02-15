@@ -1,268 +1,3 @@
-// "use client";
-// import { useEffect, useState, useCallback } from "react";
-// import Link from "next/link";
-// import { Toaster } from "react-hot-toast";
-// import { motion } from "framer-motion";
-// import api from "@/lib/axios"; 
-// import AccountSelector from "@/components/AccountSelector";
-
-// // Icons
-// const WalletIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 7h-3a2 2 0 0 1-2-2V3"/><path d="M9 18a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M12 12h.01"/></svg>);
-// const TaskIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-5.523 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>);
-// const BankIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18"/><path d="M5 21V7"/><path d="M19 21V7"/><path d="M4 7h16"/><path d="m2 7 10-5 10 5"/><path d="M12 12v3"/></svg>);
-
-// export default function Dashboard() {
-//   const [user, setUser] = useState(null);
-//   const [tasks, setTasks] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [announcement, setAnnouncement] = useState(null);
-//   const [selectedAccount, setSelectedAccount] = useState(null);
-  
-//   // --- NEW: State for Bank Details ---
-//   const [bankDetails, setBankDetails] = useState(null);
-
-//   useEffect(() => {
-//     // 1. Store the date when the user first opens the dashboard
-//     const todayStr = new Date().toDateString();
-//     localStorage.setItem('dashboardDate', todayStr);
-
-//     // 2. Check every minute if the date has changed
-//     const interval = setInterval(() => {
-//         const storedDate = localStorage.getItem('dashboardDate');
-//         const currentDate = new Date().toDateString();
-        
-//         // If the date has changed (e.g., passed midnight), reload the page
-//         if (storedDate && storedDate !== currentDate) {
-//             console.log("New Day Detected: Refreshing Dashboard...");
-//             window.location.reload(); 
-//         }
-//     }, 60000); // Check every 60 seconds
-
-//     return () => clearInterval(interval);
-//   }, []);
-
-//   // 1. Fetch User Data & Bank Details
-//   const fetchData = useCallback(async () => {
-//     try {
-//       // Parallel requests for faster loading
-//       const [userRes, walletRes] = await Promise.allSettled([
-//           api.get("/users/me"),
-//           api.get("/wallet/methods")
-//       ]);
-
-//       // Handle User Data
-//       if (userRes.status === "fulfilled") {
-//           const userData = userRes.value.data.user;
-//           setUser(userData);
-//           if (userData.linkedAccounts?.length > 0) {
-//             setSelectedAccount(userData.linkedAccounts[0]);
-//           }
-//       }
-
-//       // Handle Bank Details
-//       if (walletRes.status === "fulfilled" && walletRes.value.data.methods.length > 0) {
-//           setBankDetails(walletRes.value.data.methods[0]); // Take the first method
-//       }
-
-//     } catch (error) {
-//       console.error("Dashboard Load Error:", error);
-//     } finally {
-//       setLoading(false);
-//     }
-//   }, []);
-
-//   // 2. Fetch Tasks (Dependent on selectedAccount or just general load)
-//   useEffect(() => {
-//     if (!loading) {
-//         const query = selectedAccount ? `?accountId=${selectedAccount._id}` : "";
-//         api.get(`/tasks/daily${query}`)
-//            .then(res => setTasks(res.data.tasks))
-//            .catch(err => console.error(err));
-//     }
-//   }, [selectedAccount, loading]);
-
-//   // Initial Load
-//   useEffect(() => {
-//     fetchData();
-//     api.get("/users/announcement").then(res => {
-//         if(res.data.announcement) setAnnouncement(res.data.announcement);
-//     }).catch(err => console.log("No announcement"));
-//   }, [fetchData]);
-
-
-//   // Calculations
-//   const completedCount = tasks.filter(t => t.isCompleted).length;
-//   const totalCount = tasks.length; 
-//   const pendingEarnings = completedCount * 2.5; 
-//   const progressPercentage = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
-
-//   if (loading) return (
-//     <div className="h-96 flex items-center justify-center">
-//       <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-//     </div>
-//   );
-
-//   return (
-//     <div className="space-y-8">
-//       <Toaster position="top-right" toastOptions={{ style: { background: '#1e293b', color: '#fff', border: '1px solid #334155' } }}/>
-      
-//       {/* Top Header */}
-//       <div className="flex flex-col md:flex-row justify-between md:items-end gap-4">
-//         <div>
-//           <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
-//           <p className="text-slate-400">Welcome back, {user?.fullName}</p>
-//         </div>
-//         <div className="text-left md:text-right">
-//             <p className="text-xs text-slate-500 uppercase tracking-widest font-bold">Today's Date</p>
-//             <p className="text-white font-mono">{new Date().toLocaleDateString()}</p>
-//         </div>
-//       </div>
-
-//       {/* Account Selector (Only if social accounts exist) */}
-//       {user?.linkedAccounts?.length > 0 && (
-//          <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
-//              <div className="flex justify-between items-center mb-3">
-//                 <label className="text-xs text-slate-500 uppercase font-bold block">Viewing Stats For</label>
-//                 <Link href="/verify" className="text-xs text-blue-400 hover:text-white font-bold transition">+ Add Another</Link>
-//              </div>
-//              <AccountSelector 
-//                 accounts={user.linkedAccounts} 
-//                 selectedAccountId={selectedAccount?._id}
-//                 onSelect={(id) => setSelectedAccount(user.linkedAccounts.find(a => a._id === id))}
-//              />
-//          </div>
-//       )}
-
-//       {/* Announcement Banner */}
-//       {announcement?.isActive && (
-//         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-yellow-600/20 border border-yellow-600/50 text-yellow-400 px-6 py-4 rounded-xl flex items-center gap-3 shadow-lg shadow-yellow-900/10">
-//              <span className="text-xl">📢</span>
-//              <span className="font-medium">{announcement.message}</span>
-//         </motion.div>
-//       )}
-
-//       {/* Main Stats Grid - Updated to 4 Columns on Large Screens */}
-//       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        
-//         {/* Card 1: Wallet (Global Balance) */}
-//         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-//           className="p-6 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 shadow-xl relative overflow-hidden group">
-//            <div className="absolute top-0 right-0 p-4 opacity-10"><WalletIcon /></div>
-//            <h3 className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">Total Balance</h3>
-//            <div className="flex flex-col">
-//              <span className="text-4xl font-bold text-white tracking-tight">₹ {user?.walletBalance || 0}</span>
-//              <p className="text-xs text-slate-500 mt-2">Combined earnings</p>
-//            </div>
-//            <Link href="/withdraw" className="mt-6 block">
-//              <button className="w-full py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold rounded-lg transition">Manage Wallet</button>
-//            </Link>
-//         </motion.div>
-
-//         {/* Card 2: Daily Progress */}
-//         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-//           className="p-6 rounded-2xl bg-slate-800 border border-slate-700 shadow-xl">
-//            <div className="flex justify-between items-start mb-4">
-//              <div>
-//                <h3 className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">
-//                  Daily Tasks
-//                </h3>
-//                <p className="text-2xl font-bold text-white">{completedCount} / {totalCount}</p>
-//              </div>
-//              <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500"><TaskIcon /></div>
-//            </div>
-           
-//            <div className="w-full bg-slate-700 rounded-full h-2.5 mb-2 overflow-hidden">
-//              <div className="bg-blue-500 h-2.5 rounded-full transition-all duration-1000 ease-out" style={{ width: `${progressPercentage}%` }}></div>
-//            </div>
-           
-//            <div className="flex justify-between text-xs font-medium text-slate-500 mb-4">
-//               <span>{Math.round(progressPercentage)}% Complete</span>
-//            </div>
-
-//            <Link href="/tasks" className="block">
-//              <button className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition shadow-lg shadow-blue-900/20">
-//                 {totalCount > 0 && completedCount === totalCount ? "All Done! 🎉" : "Continue Tasks"}
-//              </button>
-//            </Link>
-//         </motion.div>
-
-//         {/* Card 3: Bank Details (NEW) */}
-//         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-//           className="p-6 rounded-2xl bg-slate-800 border border-slate-700 shadow-xl flex flex-col justify-between">
-           
-//            <div className="flex justify-between items-start mb-2">
-//              <h3 className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">Bank Details</h3>
-//              <div className="p-2 bg-purple-500/10 rounded-lg text-purple-500"><BankIcon /></div>
-//            </div>
-
-//            {bankDetails ? (
-//               <div>
-//                   <div className="mb-4">
-//                       <p className="text-xl font-bold text-white truncate" title={bankDetails.details.bankName}>
-//                           {bankDetails.details.bankName}
-//                       </p>
-//                       <p className="text-slate-400 font-mono text-sm tracking-widest">
-//                           •••• {bankDetails.details.accountNumber.slice(-4)}
-//                       </p>
-//                   </div>
-//                   <div className="flex items-center gap-2 text-xs text-green-400 bg-green-900/20 w-fit px-2 py-1 rounded border border-green-500/20">
-//                       <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-//                       Verified & Active
-//                   </div>
-//               </div>
-//            ) : (
-//               <div className="flex flex-col items-center justify-center h-full py-2 text-center">
-//                   <p className="text-slate-500 text-sm mb-3">No account linked</p>
-//                   <Link href="/withdraw" className="w-full">
-//                     <button className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-lg transition">
-//                         + Link Account
-//                     </button>
-//                   </Link>
-//               </div>
-//            )}
-//         </motion.div>
-
-//         {/* Card 4: Social Account Status */}
-//         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-//           className="p-6 rounded-2xl bg-slate-800 border border-slate-700 shadow-xl flex flex-col justify-between">
-//             {user?.linkedAccounts?.length === 0 ? (
-//                 <>
-//                   <div>
-//                     <h3 className="text-white font-bold text-lg mb-2 flex items-center gap-2">⚠️ Action Required</h3>
-//                     <p className="text-slate-400 text-sm">Verify a social account to start earning.</p>
-//                   </div>
-//                   <Link href="/verify" className="w-full mt-4">
-//                     <button className="w-full py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition">Verify Now</button>
-//                   </Link>
-//                 </>
-//             ) : (
-//                 <>
-//                    <div>
-//                       <h3 className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-2">
-//                         Social Accounts
-//                       </h3>
-//                       <div className="flex items-center gap-2 mb-1">
-//                          <span className="text-2xl font-bold text-white">{user.linkedAccounts.length}</span>
-//                          <span className="text-sm text-slate-400">Linked</span>
-//                       </div>
-//                       <p className="text-xs text-slate-500">
-//                         Total Pending: <span className="text-yellow-400 font-bold">₹{pendingEarnings}</span>
-//                       </p>
-//                    </div>
-//                    <Link href="/verify" className="w-full mt-4">
-//                      <button className="w-full py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm font-bold rounded-lg transition border border-slate-600 hover:border-slate-500">
-//                        + Link New
-//                      </button>
-//                    </Link>
-//                 </>
-//             )}
-//         </motion.div>
-
-//       </section>
-//     </div>
-//   );
-// }
-
 "use client";
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
@@ -279,12 +14,13 @@ const ArrowRight = () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24
 const BellIcon = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>;
 
 // --- 3D Tilt Card Component ---
-const TiltCard = ({ children, className, glowColor = "from-white/20 to-white/10" }) => {
+const TiltCard = ({ children, className, glowColor = "from-violet-500/20 to-blue-500/20" }) => {
   const ref = useRef(null);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
   const handleMouseMove = ({ clientX, clientY }) => {
+    if (!ref.current) return;
     const rect = ref.current.getBoundingClientRect();
     mouseX.set(clientX - rect.left);
     mouseY.set(clientY - rect.top);
@@ -330,6 +66,7 @@ export default function Dashboard() {
     if (hour >= 12 && hour < 17) setGreeting("Good Afternoon");
     else if (hour >= 17) setGreeting("Good Evening");
     
+    // Auto Refresh Logic
     const todayStr = new Date().toDateString();
     localStorage.setItem('dashboardDate', todayStr);
     const interval = setInterval(() => {
@@ -393,9 +130,10 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="min-h-screen pb-20 pt-8 px-4 sm:px-8 max-w-[1400px] mx-auto space-y-10">
+    <div className="min-h-screen pb-20 pt-20 px-4 sm:px-8 max-w-[1400px] mx-auto space-y-8 overflow-x-hidden">
       
-      <Toaster   
+      {/* Toast Config */}
+      <Toaster 
           position="top-right" 
           containerStyle={{ top: 80, zIndex: 99999 }} 
           toastOptions={{ style: { background: '#1e293b', color: '#fff', border: '1px solid #334155' } }}
@@ -407,10 +145,11 @@ export default function Dashboard() {
           <div className="absolute top-[10%] right-[-10%] w-[600px] h-[600px] bg-blue-100/50 rounded-full blur-[120px] mix-blend-multiply opacity-70"></div>
       </div>
 
-      {/* --- Header --- */}
+      {/* --- Header Section (FIXED RESPONSIVENESS) --- */}
       <div className="flex flex-col xl:flex-row justify-between xl:items-end gap-6">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-           <h1 className="text-5xl md:text-6xl font-black text-slate-900 tracking-tight leading-tight mb-2">
+           {/* Resized Font for Mobile: text-3xl instead of text-5xl */}
+           <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tight leading-tight mb-2">
              {greeting}, <br/>
              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-blue-600">
                {user?.fullName?.split(" ")[0] || "Earner"}
@@ -422,16 +161,18 @@ export default function Dashboard() {
         {user?.linkedAccounts?.length > 0 && (
            <motion.div 
              initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-             className="bg-white/70 backdrop-blur-xl p-1.5 rounded-2xl border border-slate-200 shadow-lg flex items-center gap-2 max-w-md"
+             // Added w-full and max-w-md to ensure it doesn't overflow mobile screen
+             className="bg-white/70 backdrop-blur-xl p-1.5 rounded-2xl border border-slate-200 shadow-lg flex items-center gap-2 w-full max-w-md"
            >
-              <div className="flex-1">
+              {/* Added min-w-0 to allow flex child to shrink so horizontal scroll works */}
+              <div className="flex-1 min-w-0">
                  <AccountSelector 
                     accounts={user.linkedAccounts} 
                     selectedAccountId={selectedAccount?._id}
                     onSelect={(id) => setSelectedAccount(user.linkedAccounts.find(a => a._id === id))}
                  />
               </div>
-              <Link href="/verify" className="p-3 hover:bg-violet-50 rounded-xl text-violet-600 transition-colors">
+              <Link href="/verify" className="p-3 hover:bg-violet-50 rounded-xl text-violet-600 transition-colors shrink-0">
                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
               </Link>
            </motion.div>
@@ -452,47 +193,50 @@ export default function Dashboard() {
         </motion.div>
       )}
 
-      {/* --- Grid Layout --- */}
+      {/* --- Bento Grid Layout --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-[minmax(220px,auto)]">
 
-        {/* 1. Wallet Card (LIGHTER, VIBRANT GRADIENT) */}
-        <TiltCard className="md:col-span-2 bg-gradient-to-br from-violet-600 to-blue-600 text-white group relative overflow-hidden min-h-[280px] shadow-violet-200">
-            {/* Lighter, smoother overlay instead of black */}
-            <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/20 rounded-full blur-[80px]"></div>
+        {/* 1. Wallet Card (FIXED CONTRAST & MOBILE LAYOUT) */}
+        <TiltCard className="md:col-span-2 bg-gradient-to-br from-indigo-50 via-white to-violet-50 text-slate-900 group relative overflow-hidden min-h-[260px] border border-white shadow-xl shadow-slate-200/60">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-violet-200/20 to-blue-200/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
             
-            <div className="flex flex-col justify-between h-full p-8 relative z-10">
+            <div className="flex flex-col justify-between h-full p-6 md:p-8 relative z-10">
                 <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-3">
-                        <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl border border-white/20 text-white"><WalletIcon /></div>
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-white shadow-sm rounded-2xl border border-slate-100 text-violet-600 shrink-0">
+                            <WalletIcon />
+                        </div>
                         <div>
-                            <p className="text-violet-100 text-xs font-bold uppercase tracking-widest">Available Balance</p>
-                            <div className="flex items-baseline gap-1">
-                                <span className="text-5xl font-black tracking-tighter text-white">₹{user?.walletBalance || 0}</span>
-                                {/* <span className="text-green-300 text-sm font-bold">+20%</span> */}
+                            <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-widest">Total Balance</p>
+                            <div className="flex flex-wrap items-baseline gap-2">
+                                {/* Adjusted Font Size for Mobile */}
+                                <span className="text-4xl md:text-5xl font-black tracking-tighter text-slate-900">₹{user?.walletBalance || 0}</span>
+                                <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-600 text-xs font-bold border border-emerald-100">+20%</span>
                             </div>
                         </div>
                     </div>
-                    {/* Fixed Verified User Badge Visibility */}
                     <div className="hidden sm:block">
-                       <span className="px-3 py-1.5 rounded-full bg-white/20 border border-white/20 text-xs font-bold text-white shadow-sm flex items-center gap-2 backdrop-blur-sm">
-                          <span className="w-1.5 h-1.5 bg-green-300 rounded-full animate-pulse"></span>
-                          Verified User
+                       <span className="px-3 py-1.5 rounded-full bg-white border border-slate-100 text-xs font-bold text-slate-600 shadow-sm flex items-center gap-2">
+                          <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                          Verified
                        </span>
                     </div>
                 </div>
 
-                <div className="flex items-end justify-between mt-8">
+                <div className="flex items-end justify-between mt-6">
                     <div className="space-y-1">
-                        {/* High Contrast White Text */}
-                        <p className="text-violet-200 text-[10px] uppercase font-bold tracking-widest">Card Holder</p>
-                        <p className="font-mono text-xl text-white font-black tracking-wider drop-shadow-md">{user?.fullName?.toUpperCase()}</p>
+                        <p className="text-slate-400 text-[10px] uppercase font-bold tracking-widest">Card Holder</p>
+                        {/* Changed color to Slate-900 so it's visible on light bg */}
+                        <p className="font-mono text-xl md:text-2xl text-slate-900 font-black tracking-widest truncate max-w-[150px] md:max-w-xs">
+                            {user?.fullName?.toUpperCase() || "USER"}
+                        </p>
                     </div>
                     <Link href="/withdraw">
                         <motion.button 
                             whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                            className="bg-white text-violet-600 px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-slate-50 transition-all shadow-lg"
+                            className="bg-slate-900 text-white px-5 py-3 rounded-xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-slate-200"
                         >
-                            Withdraw Funds <ArrowRight />
+                            Withdraw <ArrowRight />
                         </motion.button>
                     </Link>
                 </div>
