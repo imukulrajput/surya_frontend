@@ -101,7 +101,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import api from "@/lib/axios";
 
 // --- Icons ---
-const PhoneIcon = () => <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>;
+const TelegramIcon = () => <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>;
 const MailIcon = () => <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>;
 const SendIcon = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>;
 const ChevronDown = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>;
@@ -183,7 +183,7 @@ export default function SupportPage() {
     const faqs = [
         { q: "How do I withdraw my earnings?", a: "Go to the Dashboard and click 'Withdraw Funds'. We support bank transfers and UPI. Withdrawals are processed within 24-48 hours." },
         { q: "Why was my task rejected?", a: "Tasks are usually rejected if they don't meet the proof requirements or if the screenshot is unclear. Check the task instructions again." },
-        { q: "Is there a minimum withdrawal limit?", a: "Yes, the minimum withdrawal amount is ₹500. Once you reach this balance, the withdraw button will become active." },
+        { q: "Is there a minimum withdrawal limit?", a: "Yes, the minimum withdrawal amount is ₹300. Once you reach this balance, the withdraw button will become active." },
     ];
 
     return (
@@ -231,15 +231,20 @@ export default function SupportPage() {
                         </p>
                         
                         <div className="space-y-8">
-                            <div className="flex items-center gap-6 group">
+                         <a 
+                                href="https://t.me/Myworksupport" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-6 group cursor-pointer"
+                            >
                                 <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-white group-hover:scale-110 transition-transform">
-                                    <PhoneIcon />
+                                    <TelegramIcon />
                                 </div>
                                 <div>
-                                    <p className="text-xs text-violet-200 uppercase font-bold tracking-widest mb-1">Phone Support</p>
-                                    <p className="text-xl font-bold">+91 98765 43210</p>
+                                    <p className="text-xs text-violet-200 uppercase font-bold tracking-widest mb-1">Telegram Channel</p>
+                                    <p className="text-xl font-bold group-hover:underline decoration-white/50 underline-offset-4">t.me/Myworksupport</p>
                                 </div>
-                            </div>
+                            </a>
                             
                             <div className="flex items-center gap-6 group">
                                 <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-white group-hover:scale-110 transition-transform">
@@ -247,7 +252,7 @@ export default function SupportPage() {
                                 </div>
                                 <div>
                                     <p className="text-xs text-violet-200 uppercase font-bold tracking-widest mb-1">Email Support</p>
-                                    <p className="text-xl font-bold">help@Mywork
+                                    <p className="text-xl font-bold">mywork0000011@gmail
                                       .com</p>
                                 </div>
                             </div>

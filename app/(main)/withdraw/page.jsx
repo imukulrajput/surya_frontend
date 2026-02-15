@@ -354,7 +354,7 @@ export default function WithdrawPage() {
   };
 
   const handleWithdraw = async () => {
-      if(amount < 50) return toast.error("Minimum withdrawal is ₹50");
+      if(amount < 300) return toast.error("Minimum withdrawal is ₹300");
       if(amount > user?.walletBalance) return toast.error("Insufficient balance");
       try { await api.post("/wallet/withdraw", { amount: Number(amount), methodId: methods[0]._id }); toast.success("Withdrawal Requested!"); setShowRequestModal(false); fetchData(); } catch(e){ toast.error(e.response?.data?.message || "Failed"); }
   };
