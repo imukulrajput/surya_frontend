@@ -143,6 +143,10 @@ export default function TaskDashboard() {
       toast.success("Caption copied!");
   };
 
+  const todaysEarnings = tasks
+    .filter(t => t.status === 'Approved')
+    .reduce((sum, t) => sum + (t.rewardAmount || 0), 0);
+
   if (loading) return (
     <div className="h-screen flex flex-col items-center justify-center space-y-4">
         <div className="w-12 h-12 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin"></div>
@@ -172,12 +176,12 @@ export default function TaskDashboard() {
                 <p className="text-slate-500 font-medium text-sm mt-1">Complete tasks to earn real money.</p>
             </div>
              
-            {/* <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
                  <div className="px-5 py-3 bg-white/80 border border-slate-200 rounded-2xl shadow-sm backdrop-blur-md flex items-center gap-3">
-                    <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Pot:</span>
-                    <span className="text-violet-600 font-black text-xl tracking-tight">₹{tasks.length * 2.5}</span>
+                    <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Today's Earnings:</span>
+                    <span className="text-violet-600 font-black text-xl tracking-tight">₹ {todaysEarnings}</span>
                  </div>
-            </div> */}
+            </div>
         </div>
 
         {/* Account Selector */}

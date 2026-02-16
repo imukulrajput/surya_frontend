@@ -114,7 +114,9 @@ export default function Dashboard() {
   const completedCount = tasks.filter(t => t.isCompleted).length;
   const totalCount = tasks.length; 
   const progressPercentage = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
-  const pendingEarnings = completedCount * 2.5;
+ const pendingEarnings = tasks
+    .filter(t => t.status === 'Pending') 
+    .reduce((sum, t) => sum + (t.rewardAmount || 0), 0);
 
   const radius = 30;
   const circumference = 2 * Math.PI * radius;
