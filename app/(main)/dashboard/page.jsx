@@ -211,7 +211,7 @@ export default function Dashboard() {
                             <div className="flex flex-wrap items-baseline gap-2">
                                 {/* Adjusted Font Size for Mobile */}
                                 <span className="text-4xl md:text-5xl font-black tracking-tighter text-slate-900">₹{user?.walletBalance || 0}</span>
-                                <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-600 text-xs font-bold border border-emerald-100">+20%</span>
+                                {/* <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-600 text-xs font-bold border border-emerald-100">+20%</span> */}
                             </div>
                         </div>
                     </div>

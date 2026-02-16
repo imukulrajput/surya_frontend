@@ -171,13 +171,13 @@ export default function TaskDashboard() {
                 </h1>
                 <p className="text-slate-500 font-medium text-sm mt-1">Complete tasks to earn real money.</p>
             </div>
-            
-            <div className="flex items-center gap-3">
+             
+            {/* <div className="flex items-center gap-3">
                  <div className="px-5 py-3 bg-white/80 border border-slate-200 rounded-2xl shadow-sm backdrop-blur-md flex items-center gap-3">
                     <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Pot:</span>
                     <span className="text-violet-600 font-black text-xl tracking-tight">₹{tasks.length * 2.5}</span>
                  </div>
-            </div>
+            </div> */}
         </div>
 
         {/* Account Selector */}
