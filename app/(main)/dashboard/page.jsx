@@ -174,7 +174,7 @@ export default function Dashboard() {
                     onSelect={(id) => setSelectedAccount(user.linkedAccounts.find(a => a._id === id))}
                  />
               </div>
-              <Link href="/verify" className="p-3 hover:bg-violet-50 rounded-xl text-violet-600 transition-colors shrink-0">
+              <Link href="/Account-verify" className="p-3 hover:bg-violet-50 rounded-xl text-violet-600 transition-colors shrink-0">
                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
               </Link>
            </motion.div>
@@ -321,7 +321,7 @@ export default function Dashboard() {
                             <h3 className="text-2xl font-black text-slate-900 mb-2">⚠️ Activation Required</h3>
                             <p className="text-slate-500 font-medium">To ensure quality, we require you to link at least one active social media profile.</p>
                         </div>
-                        <Link href="/verify" className="w-full md:w-auto">
+                        <Link href="/Account-verify" className="w-full md:w-auto">
                             <button className="w-full md:w-auto px-8 py-4 bg-slate-900 text-white font-bold rounded-xl shadow-xl hover:scale-105 transition-transform">
                                 Link Account Now
                             </button>

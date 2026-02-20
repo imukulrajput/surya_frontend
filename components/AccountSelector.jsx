@@ -42,7 +42,7 @@ const getPlatformIcon = (platform) => {
 export default function AccountSelector({ accounts, selectedAccountId, onSelect }) {
   if (!accounts || accounts.length === 0) {
     return (
-        <Link href="/verify">
+        <Link href="/Account-verify">
             <button className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-100 rounded-full text-xs font-bold hover:bg-red-100 transition-colors">
                 <span>⚠️ No Accounts Linked</span>
                 <span className="underline">Link Now</span>
@@ -98,7 +98,7 @@ export default function AccountSelector({ accounts, selectedAccountId, onSelect 
       })}
 
       {/* Quick Add Button */}
-      <Link href="/verify">
+      <Link href="/Account-verify">
         <motion.button 
             whileHover={{ scale: 1.05 }}
             className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-dashed border-slate-300 text-slate-400 hover:text-violet-600 hover:border-violet-400 hover:bg-violet-50 transition-all"

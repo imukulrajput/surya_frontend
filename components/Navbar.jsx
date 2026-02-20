@@ -116,7 +116,7 @@ const navItems = [
   { name: "Overview", path: "/dashboard" },
   { name: "Tasks", path: "/tasks" },
   { name: "Wallet", path: "/withdraw" },
-  { name: "Verify", path: "/verify" },
+  { name: "Account Verify", path: "/Account-verify" },
   { name: "History", path: "/history" },
   { name: "Support", path: "/support" },
 ];

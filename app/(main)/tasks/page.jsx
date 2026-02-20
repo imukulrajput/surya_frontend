@@ -198,7 +198,7 @@ export default function TaskDashboard() {
                     <div className="p-1.5 bg-red-100 rounded-lg"><AlertIcon /></div>
                     <span>You are in View Mode. Link an account to earn.</span>
                 </div>
-                <Link href="/verify"><button className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg shadow-md transition whitespace-nowrap">Link Now</button></Link>
+                <Link href="/Account-verify"><button className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg shadow-md transition whitespace-nowrap">Link Now</button></Link>
             </motion.div>
         )}
       </div>
