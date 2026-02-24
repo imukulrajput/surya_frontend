@@ -30,7 +30,7 @@
 
 import { Roboto } from "next/font/google";
 import "./globals.css";
-import AuthProvider from "@/components/AuthProvider";
+
 
 
 const roboto = Roboto({
@@ -50,9 +50,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en"> 
       <body className={`${roboto.variable} antialiased`}>
-        <AuthProvider>
+       
              {children}
-        </AuthProvider>
+        
       </body>
     </html>
   );
