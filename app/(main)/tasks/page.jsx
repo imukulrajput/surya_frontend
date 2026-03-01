@@ -106,9 +106,9 @@ export default function TaskDashboard() {
   const [proofInputs, setProofInputs] = useState({});
   const [instructionTask, setInstructionTask] = useState(null); // State for modal
 
-  useEffect(() => {
+  useEffect(() => {    
     const init = async () => {
-        try {
+        try {  
             const { data } = await api.get("/users/me");
             setUser(data.user);
             if(data.user.linkedAccounts?.length) setSelectedAccount(data.user.linkedAccounts[0]);

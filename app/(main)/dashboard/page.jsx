@@ -5,6 +5,7 @@ import { Toaster } from "react-hot-toast";
 import { motion, useMotionTemplate, useMotionValue } from "framer-motion";
 import api from "@/lib/axios"; 
 import AccountSelector from "@/components/AccountSelector";
+import { useRouter } from "next/navigation";
 
 // --- Icons ---
 const WalletIcon = () => <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>;
@@ -60,6 +61,7 @@ export default function Dashboard() {
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [bankDetails, setBankDetails] = useState(null);
   const [greeting, setGreeting] = useState("Good Morning");
+  const router = useRouter();
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -81,21 +83,41 @@ export default function Dashboard() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [userRes, walletRes] = await Promise.allSettled([
-          api.get("/users/me"),
-          api.get("/wallet/methods")
-      ]);
+      // 1. Fetch User First
+      // If the user is logged out (401), this will immediately throw an error
+      // and jump straight to the catch block.
+      const userRes = await api.get("/users/me");
+      const userData = userRes.data.user;
+      
+      setUser(userData);
+      if (userData.linkedAccounts?.length > 0) {
+          setSelectedAccount(userData.linkedAccounts[0]);
+      }
 
-      if (userRes.status === "fulfilled") {
-          const userData = userRes.value.data.user;
-          setUser(userData);
-          if (userData.linkedAccounts?.length > 0) setSelectedAccount(userData.linkedAccounts[0]);
+      // 2. Fetch Wallet Details Separately
+      // We wrap this in its own try/catch so a wallet error doesn't log the user out
+      try {
+          const walletRes = await api.get("/wallet/methods");
+          if (walletRes.data?.methods?.length > 0) {
+              setBankDetails(walletRes.data.methods[0]);
+          }
+      } catch (walletErr) {
+          console.error("Wallet fetch error:", walletErr);
       }
-      if (walletRes.status === "fulfilled" && walletRes.value.data.methods.length > 0) {
-          setBankDetails(walletRes.value.data.methods[0]); 
-      }
-    } catch (error) { console.error(error); } finally { setLoading(false); }
-  }, []);
+
+      // 3. Stop the loading spinner ONLY if authentication succeeds
+      setLoading(false);
+
+    } catch (error) {
+       console.error("Authentication failed. Redirecting to login...");
+       // 4. Redirect to login smoothly
+       router.push("/login");
+       
+       // Notice we DO NOT call setLoading(false) here.
+       // Keeping loading as `true` ensures the spinner stays on the screen 
+       // until Next.js finishes routing the user away.
+    }
+  }, [router]);
 
   useEffect(() => {
     if (!loading) {
