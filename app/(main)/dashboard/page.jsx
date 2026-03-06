@@ -102,9 +102,9 @@ export default function Dashboard() {
               setBankDetails(walletRes.data.methods[0]);
           }
       } catch (walletErr) {
-          console.error("Wallet fetch error:", walletErr);
+          console.error("Wallet fetch error:", walletErr);    
       }
-
+         
       // 3. Stop the loading spinner ONLY if authentication succeeds
       setLoading(false);
 

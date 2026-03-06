@@ -212,8 +212,23 @@ export default function ApprovalsPage() {
   };
 
   const handleBulkAction = async (decision) => {
-    if (!confirm(`Bulk ${decision}?`)) return;
-    try { await Promise.all(selectedIds.map(id => api.post("/admin/decide", { submissionId: id, decision }))); toast.success("Bulk Action Complete"); fetchSubmissions(); setSelectedIds([]); } catch(e){ toast.error("Failed"); }
+    if (!confirm(`Are you sure you want to ${decision} ${selectedIds.length} tasks?`)) return;
+    
+    const toastId = toast.loading(`Processing ${selectedIds.length} tasks...`);
+    
+    try { 
+      // Send ONE request with all IDs
+      await api.post("/admin/decide/bulk", { 
+          submissionIds: selectedIds, 
+          decision 
+      }); 
+      
+      toast.success(`Batch ${decision} Complete!`, { id: toastId }); 
+      fetchSubmissions(); 
+      setSelectedIds([]); 
+    } catch(e) { 
+      toast.error("Failed to process bulk action", { id: toastId }); 
+    }
   };
 
   const toggleSelectOne = (id) => setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
