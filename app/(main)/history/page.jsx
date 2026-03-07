@@ -1,96 +1,3 @@
-// "use client";
-// import { useState, useEffect } from "react";
-// import { format } from "date-fns"; 
-// import { Toaster } from "react-hot-toast";
-// import api from "@/lib/axios";
-
-// export default function HistoryPage() {
-//   const [history, setHistory] = useState([]);
-//   const [loading, setLoading] = useState(true);
-
-//   useEffect(() => {
-//     const fetchHistory = async () => {
-//       try {
-//        const { data } = await api.get("/tasks/history");
-//        setHistory(data.history);
-//       } catch (error) {
-//         console.error("Error fetching history");
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-//     fetchHistory();
-//   }, []);
-
-//   const getStatusColor = (status) => {
-//     switch (status) {
-//       case "Approved": return "bg-green-500/10 text-green-400 border-green-500/20";
-//       case "Rejected": return "bg-red-500/10 text-red-400 border-red-500/20";
-//       default: return "bg-yellow-500/10 text-yellow-400 border-yellow-500/20";
-//     }
-//   };
-
-//   if (loading) return <div className="text-white p-8">Loading...</div>;
-
-//   return (
-//     <div className="max-w-5xl mx-auto space-y-6">
-//       <Toaster position="top-right" toastOptions={{ style: { background: '#1e293b', color: '#fff' } }}/>
-      
-//       <div>
-//         <h1 className="text-3xl font-bold text-white mb-1">Task History</h1>
-//         <p className="text-slate-400">View your past submissions and approval status.</p>
-//       </div>
-
-//       {history.length === 0 ? (
-//         <div className="text-center py-20 bg-slate-800/50 rounded-2xl border border-slate-700">
-//           <p className="text-slate-400">No history found.</p>
-//         </div>
-//       ) : (
-//         <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-xl">
-//           <div className="overflow-x-auto">
-//             <table className="w-full text-left">
-//               <thead className="bg-slate-900/50 text-slate-400 uppercase text-xs tracking-wider">
-//                 <tr>
-//                   <th className="p-4 font-semibold">Date</th>
-//                   <th className="p-4 font-semibold">Task Title</th>
-//                   <th className="p-4 font-semibold">Platform</th>
-//                   <th className="p-4 font-semibold">Reward</th>
-//                   <th className="p-4 font-semibold">Status</th>
-//                 </tr>
-//               </thead>
-//               <tbody className="divide-y divide-slate-700 text-slate-300">
-//                 {history.map((item) => (
-//                   <tr key={item._id} className="hover:bg-slate-700/30 transition">
-//                     <td className="p-4 text-sm">
-//                       {format(new Date(item.createdAt), "MMM dd, yyyy • hh:mm a")}
-//                     </td>
-//                     <td className="p-4 font-medium text-white">
-//                       {item.taskId?.title || "Unknown Task"}
-//                     </td>
-//                     <td className="p-4">
-//                       <span className="px-2 py-1 rounded text-xs bg-slate-900 border border-slate-700">
-//                         {item.platform}
-//                       </span>
-//                     </td>
-//                     <td className="p-4 font-mono text-yellow-400 font-bold">
-//                       ₹{item.taskId?.rewardAmount || 0}
-//                     </td>
-//                     <td className="p-4">
-//                       <span className={`px-3 py-1 rounded-full text-[10px] uppercase font-bold border ${getStatusColor(item.status)}`}>
-//                         {item.status}
-//                       </span>
-//                     </td>
-//                   </tr>
-//                 ))}
-//               </tbody>
-//             </table>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
 "use client";
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
@@ -105,7 +12,6 @@ const XCircle = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" s
 const FilterIcon = () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>;
 
 // --- Components ---
-
 const PlatformIcon = ({ platform }) => {
     const styles = {
         Instagram: "bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 text-white shadow-pink-200",
@@ -144,7 +50,7 @@ const StatusBadge = ({ status }) => {
 export default function HistoryPage() {
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState("All"); // All, Approved, Pending, Rejected
+    const [filter, setFilter] = useState("All");
 
     useEffect(() => {
         api.get("/tasks/history")
@@ -168,7 +74,7 @@ export default function HistoryPage() {
 
     return (
         <div className="min-h-screen pb-20 pt-12 px-4 md:px-8 max-w-4xl mx-auto relative">
-            <Toaster position="top-right "  containerStyle={{ top: 80, zIndex: 99999 }} 
+            <Toaster position="top-right" containerStyle={{ top: 80, zIndex: 99999 }} 
           toastOptions={{ style: { background: '#1e293b', color: '#fff', border: '1px solid #334155' } }} />
 
             {/* --- Ambient Background --- */}
@@ -226,7 +132,6 @@ export default function HistoryPage() {
 
             {/* --- Timeline Feed --- */}
             <div className="space-y-4 relative">
-                {/* Vertical Line (Decoration) */}
                 <div className="absolute left-8 top-4 bottom-4 w-0.5 bg-gradient-to-b from-slate-200 via-slate-200 to-transparent hidden md:block" />
 
                 <AnimatePresence mode="popLayout">
@@ -257,19 +162,28 @@ export default function HistoryPage() {
                                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                         
                                         {/* Left: Icon & Title */}
-                                        <div className="flex items-center gap-4 w-full sm:w-auto">
+                                        <div className="flex items-center gap-4 w-full sm:w-auto flex-1">
                                             <div className="shrink-0">
                                                 <PlatformIcon platform={item.platform} />
                                             </div>
-                                            <div className="min-w-0">
+                                            <div className="min-w-0 flex-1">
                                                 <h3 className="font-bold text-slate-900 text-lg truncate pr-4">
                                                     {item.taskId?.title || "Task Submission"}
                                                 </h3>
-                                                <p className="text-xs text-slate-500 font-medium flex items-center gap-2">
+                                                <p className="text-xs text-slate-500 font-medium flex items-center gap-2 mb-1">
                                                     <span>{format(new Date(item.createdAt), "MMM dd, yyyy")}</span>
                                                     <span className="w-1 h-1 bg-slate-300 rounded-full" />
                                                     <span>{format(new Date(item.createdAt), "hh:mm a")}</span>
                                                 </p>
+
+                                                {/* --- DISPLAY REJECTION REASON HERE --- */}
+                                                {item.status === 'Rejected' && item.adminComment && (
+                                                    <div className="mt-2 bg-red-50/80 border border-red-100 text-red-600 text-xs font-semibold px-3 py-2 rounded-lg inline-block">
+                                                        <span className="font-black uppercase tracking-wider text-[10px] block text-red-400 mb-0.5">Rejection Reason:</span> 
+                                                        {item.adminComment}
+                                                    </div>
+                                                )}
+
                                             </div>
                                         </div>
 
