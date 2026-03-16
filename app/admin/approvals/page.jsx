@@ -17,37 +17,58 @@ const ITEMS_PER_PAGE = 50;
 export default function ApprovalsPage() {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("Pending");
+  
+  // --- Filter States ---
+  const [filter, setFilter] = useState("Pending"); // Maps to status
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [platformFilter, setPlatformFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
   
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
-  // Set for fast ID lookups
   const [selectedIds, setSelectedIds] = useState(new Set());
 
-  // --- Reject Modal State ---
+  // Reject Modal State
   const [rejectModal, setRejectModal] = useState({ isOpen: false, type: null, id: null });
   const [rejectReason, setRejectReason] = useState(REJECT_REASONS[0]);
   const [customReason, setCustomReason] = useState("");
 
-  // Fetch data whenever filter OR page changes
+  // Debounce search input to prevent API spam
+  useEffect(() => {
+      const timer = setTimeout(() => setDebouncedSearch(searchTerm), 500);
+      return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch data whenever a filter, page, or debounced search changes
   useEffect(() => { 
       fetchSubmissions(); 
-  }, [filter, currentPage]);
+  }, [filter, currentPage, debouncedSearch, platformFilter, dateFilter]);
 
-  // Reset page and selections when switching tabs
+  // Reset page and selections when switching main tabs or filters
   useEffect(() => {
       setCurrentPage(1);
       setSelectedIds(new Set());
-  }, [filter]);
+  }, [filter, debouncedSearch, platformFilter, dateFilter]);
 
   const fetchSubmissions = async () => {
     setLoading(true);
     try { 
-        // Pass page and limit to the server for server-side pagination
-        const { data } = await api.get(`/admin/submissions?status=${filter}&page=${currentPage}&limit=${ITEMS_PER_PAGE}`); 
+        // Build query string dynamically
+        const queryParams = new URLSearchParams({
+            status: filter,
+            page: currentPage,
+            limit: ITEMS_PER_PAGE,
+            ...(debouncedSearch && { search: debouncedSearch }),
+            ...(platformFilter && { platform: platformFilter }),
+            ...(dateFilter && { date: dateFilter })
+        });
+
+        const { data } = await api.get(`/admin/submissions?${queryParams.toString()}`); 
+        
         setSubmissions(data.submissions);
         setTotalPages(data.totalPages);
         setTotalItems(data.totalItems);
@@ -58,11 +79,17 @@ export default function ApprovalsPage() {
     }
   };
 
+  const clearFilters = () => {
+      setSearchTerm("");
+      setPlatformFilter("");
+      setDateFilter("");
+  };
+
   const handleDecision = async (id, decision, adminComment = null) => {
     try { 
         await api.post("/admin/decide", { submissionId: id, decision, adminComment }); 
         toast.success(decision); 
-        fetchSubmissions(); // Re-fetch the current page to get fresh data
+        fetchSubmissions(); 
         
         setSelectedIds(prev => {
             const newSet = new Set(prev);
@@ -89,8 +116,6 @@ export default function ApprovalsPage() {
       
       toast.success(`Batch ${decision} Complete!`, { id: toastId }); 
       setSelectedIds(new Set()); 
-      
-      // Jumping back to page 1 is safest after a bulk action
       setCurrentPage(1); 
       fetchSubmissions();
     } catch(e) { 
@@ -99,23 +124,36 @@ export default function ApprovalsPage() {
   };
 
   const handleApproveAllPending = async () => {
-      // High-friction warning since this is a massive database action
-      if (!window.confirm(`🚨 DANGER: Are you absolutely sure you want to approve ALL ${totalItems} pending tasks in the database? This cannot be undone.`)) {
+      // Dynamic warning message based on if filters are active
+      let confirmMsg = `🚨 DANGER: Are you sure you want to approve ALL ${totalItems} pending tasks`;
+      if (debouncedSearch || platformFilter || dateFilter) {
+          confirmMsg += ` matching your current filters?`;
+      } else {
+          confirmMsg += ` in the ENTIRE database? This cannot be undone.`;
+      }
+
+      if (!window.confirm(confirmMsg)) {
           return;
       }
       
-      const toastId = toast.loading(`Approving all ${totalItems} pending tasks...`);
+      const toastId = toast.loading(`Approving ${totalItems} tasks...`);
       
       try { 
-        const res = await api.post("/admin/decide/approve-all"); 
-        toast.success(res.data.message || "All pending tasks approved!", { id: toastId }); 
+        // Send the active filters to the backend!
+        const res = await api.post("/admin/decide/approve-all", {
+            search: debouncedSearch,
+            platform: platformFilter,
+            date: dateFilter
+        }); 
+
+        toast.success(res.data.message || "Tasks approved!", { id: toastId }); 
         
         // Reset the page and selections
         setSelectedIds(new Set()); 
         setCurrentPage(1); 
         fetchSubmissions(); 
       } catch(e) { 
-        toast.error(e.response?.data?.message || "Failed to approve all tasks", { id: toastId }); 
+        toast.error(e.response?.data?.message || "Failed to approve tasks", { id: toastId }); 
       }
   };
 
@@ -131,10 +169,8 @@ export default function ApprovalsPage() {
   const toggleSelectCurrentPage = (e) => {
       const newSet = new Set(selectedIds);
       if (e.target.checked) {
-          // Add all IDs from the CURRENT page
           submissions.forEach(s => newSet.add(s._id));
       } else {
-          // Remove all IDs from the CURRENT page
           submissions.forEach(s => newSet.delete(s._id));
       }
       setSelectedIds(newSet);
@@ -161,14 +197,13 @@ export default function ApprovalsPage() {
       setCustomReason("");
   };
 
-  // Helper to check if all items on the CURRENT page are selected
   const isCurrentPageSelected = submissions.length > 0 && submissions.every(s => selectedIds.has(s._id));
 
   return (
     <div>
       <Toaster position="top-right" />
 
-      {/* --- REJECT MODAL --- */}
+      {/* --- REJECT MODAL (Unchanged) --- */}
       {rejectModal.isOpen && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl transition-all">
@@ -209,13 +244,11 @@ export default function ApprovalsPage() {
           </div>
       )}
 
-      {/* --- HEADER CONTROLS --- */}
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-8 gap-4">
+      {/* --- HEADER & STATUS TABS --- */}
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 gap-4">
           <div className="flex items-center gap-4 flex-wrap">
-            {/* Show totalItems dynamically from the server */}
             <h1 className="text-3xl font-extrabold text-slate-900">{filter} <span className="text-slate-400 text-lg font-medium">({totalItems})</span></h1>
             
-            {/* Checkbox-based bulk actions */}
             {selectedIds.size > 0 && filter === "Pending" && (
                 <div className="flex gap-2">
                     <button onClick={() => handleBulkAction("Approved")} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-green-200">Approve ({selectedIds.size})</button>
@@ -225,7 +258,6 @@ export default function ApprovalsPage() {
           </div>
 
           <div className="flex items-center gap-4 flex-wrap w-full xl:w-auto">
-              {/* APPROVE ALL BUTTON */}
               {filter === "Pending" && totalItems > 0 && (
                   <button 
                       onClick={handleApproveAllPending} 
@@ -243,6 +275,51 @@ export default function ApprovalsPage() {
           </div>
       </div>
 
+      {/* --- NEW: FILTER BAR --- */}
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-center">
+          <div className="flex-1 w-full">
+              <input 
+                  type="text" 
+                  placeholder="Search by User Name or Email..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 px-4 py-2.5 rounded-lg text-sm font-medium outline-none focus:ring-2 focus:ring-violet-500 transition-all"
+              />
+          </div>
+          
+          <div className="w-full md:w-48">
+              <select 
+                  value={platformFilter}
+                  onChange={(e) => setPlatformFilter(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 px-4 py-2.5 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-violet-500 transition-all cursor-pointer"
+              >
+                  <option value="">All Platforms</option>
+                  <option value="Instagram">Instagram</option>
+                  <option value="YouTube">YouTube</option>
+                  <option value="Twitter">Twitter</option>
+                  {/* Add other platforms your app supports here */}
+              </select>
+          </div>
+
+          <div className="w-full md:w-auto flex items-center gap-2">
+              <input 
+                  type="date" 
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 px-4 py-2.5 rounded-lg text-sm font-medium outline-none focus:ring-2 focus:ring-violet-500 transition-all"
+              />
+              {(searchTerm || platformFilter || dateFilter) && (
+                  <button 
+                      onClick={clearFilters}
+                      className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-sm font-bold transition whitespace-nowrap"
+                  >
+                      Clear
+                  </button>
+              )}
+          </div>
+      </div>
+
+      {/* --- SELECTION & PAGINATION CONTROLS --- */}
       {submissions.length > 0 && filter === "Pending" && (
           <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
               <label className="flex items-center gap-2 text-slate-700 text-sm font-bold cursor-pointer">
@@ -255,7 +332,6 @@ export default function ApprovalsPage() {
                   Select Page {currentPage}
               </label>
               
-              {/* Pagination Controls */}
               {totalPages > 1 && (
                   <div className="flex items-center gap-4 text-sm font-bold text-slate-600">
                       <button 
@@ -278,10 +354,11 @@ export default function ApprovalsPage() {
           </div>
       )}
 
+      {/* --- DATA LIST --- */}
       {loading ? (
           <div className="text-center py-10 text-slate-500 font-bold animate-pulse">Loading tasks...</div>
       ) : submissions.length === 0 ? (
-          <div className="text-center py-10 text-slate-500 font-bold">No tasks found.</div>
+          <div className="text-center py-10 text-slate-500 font-bold">No tasks found matching your filters.</div>
       ) : (
           <div className="grid gap-4">
             {submissions.map((sub) => {
@@ -335,7 +412,7 @@ export default function ApprovalsPage() {
           </div>
       )}
       
-      {/* Bottom Pagination Controls */}
+      {/* Bottom Pagination Controls (Unchanged) */}
       {!loading && totalPages > 1 && (
           <div className="flex flex-col sm:flex-row justify-center items-center mt-8 gap-4 text-sm font-bold text-slate-600 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
               <button 
