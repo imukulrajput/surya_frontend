@@ -183,7 +183,7 @@ export default function SupportPage() {
     const faqs = [
         { q: "How do I withdraw my earnings?", a: "Go to the Dashboard and click 'Withdraw Funds'. We support bank transfers and UPI. Withdrawals are processed within 24-48 hours." },
         { q: "Why was my task rejected?", a: "Tasks are usually rejected if they don't meet the proof requirements or if the screenshot is unclear. Check the task instructions again." },
-        { q: "Is there a minimum withdrawal limit?", a: "Yes, the minimum withdrawal amount is ₹300. Once you reach this balance, the withdraw button will become active." },
+        { q: "Is there a minimum withdrawal limit?", a: "Yes, the minimum withdrawal amount is ₹1000. Once you reach this balance, the withdraw button will become active." },
     ];
 
     return (
