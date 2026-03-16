@@ -19,7 +19,7 @@ export default function ApprovalsPage() {
   const [loading, setLoading] = useState(true);
   
   // --- Filter States ---
-  const [filter, setFilter] = useState("Pending"); // Maps to status
+  const [filter, setFilter] = useState("Pending"); 
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [platformFilter, setPlatformFilter] = useState("");
@@ -37,27 +37,27 @@ export default function ApprovalsPage() {
   const [rejectReason, setRejectReason] = useState(REJECT_REASONS[0]);
   const [customReason, setCustomReason] = useState("");
 
-  // Debounce search input to prevent API spam
+  // FIX 1 & 2: Safe Debounce + Trim + Batched Page Reset
   useEffect(() => {
-      const timer = setTimeout(() => setDebouncedSearch(searchTerm), 500);
+      const timer = setTimeout(() => {
+          const cleanSearch = searchTerm.trim(); // Fixes the trailing space bug
+          if (cleanSearch !== debouncedSearch) {
+              setDebouncedSearch(cleanSearch);
+              setCurrentPage(1); // Safely resets page without causing a race condition
+              setSelectedIds(new Set());
+          }
+      }, 500);
       return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [searchTerm, debouncedSearch]);
 
-  // Fetch data whenever a filter, page, or debounced search changes
+  // The ONLY Fetch Effect needed now
   useEffect(() => { 
       fetchSubmissions(); 
   }, [filter, currentPage, debouncedSearch, platformFilter, dateFilter]);
 
-  // Reset page and selections when switching main tabs or filters
-  useEffect(() => {
-      setCurrentPage(1);
-      setSelectedIds(new Set());
-  }, [filter, debouncedSearch, platformFilter, dateFilter]);
-
   const fetchSubmissions = async () => {
     setLoading(true);
     try { 
-        // Build query string dynamically
         const queryParams = new URLSearchParams({
             status: filter,
             page: currentPage,
@@ -79,10 +79,31 @@ export default function ApprovalsPage() {
     }
   };
 
+  // --- Handlers that safely reset pagination when filters change ---
+  const handleTabChange = (newStatus) => {
+      setFilter(newStatus);
+      setCurrentPage(1);
+      setSelectedIds(new Set());
+  };
+
+  const handlePlatformChange = (e) => {
+      setPlatformFilter(e.target.value);
+      setCurrentPage(1);
+      setSelectedIds(new Set());
+  };
+
+  const handleDateChange = (e) => {
+      setDateFilter(e.target.value);
+      setCurrentPage(1);
+      setSelectedIds(new Set());
+  };
+
   const clearFilters = () => {
       setSearchTerm("");
       setPlatformFilter("");
       setDateFilter("");
+      setCurrentPage(1);
+      setSelectedIds(new Set());
   };
 
   const handleDecision = async (id, decision, adminComment = null) => {
@@ -124,7 +145,6 @@ export default function ApprovalsPage() {
   };
 
   const handleApproveAllPending = async () => {
-      // Dynamic warning message based on if filters are active
       let confirmMsg = `🚨 DANGER: Are you sure you want to approve ALL ${totalItems} pending tasks`;
       if (debouncedSearch || platformFilter || dateFilter) {
           confirmMsg += ` matching your current filters?`;
@@ -139,7 +159,6 @@ export default function ApprovalsPage() {
       const toastId = toast.loading(`Approving ${totalItems} tasks...`);
       
       try { 
-        // Send the active filters to the backend!
         const res = await api.post("/admin/decide/approve-all", {
             search: debouncedSearch,
             platform: platformFilter,
@@ -147,8 +166,6 @@ export default function ApprovalsPage() {
         }); 
 
         toast.success(res.data.message || "Tasks approved!", { id: toastId }); 
-        
-        // Reset the page and selections
         setSelectedIds(new Set()); 
         setCurrentPage(1); 
         fetchSubmissions(); 
@@ -203,7 +220,6 @@ export default function ApprovalsPage() {
     <div>
       <Toaster position="top-right" />
 
-      {/* --- REJECT MODAL (Unchanged) --- */}
       {rejectModal.isOpen && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl transition-all">
@@ -244,7 +260,6 @@ export default function ApprovalsPage() {
           </div>
       )}
 
-      {/* --- HEADER & STATUS TABS --- */}
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 gap-4">
           <div className="flex items-center gap-4 flex-wrap">
             <h1 className="text-3xl font-extrabold text-slate-900">{filter} <span className="text-slate-400 text-lg font-medium">({totalItems})</span></h1>
@@ -269,13 +284,12 @@ export default function ApprovalsPage() {
 
               <div className="bg-white p-1 rounded-xl border border-slate-200 flex shadow-sm w-full sm:w-auto overflow-x-auto">
                   {["Pending", "Approved", "Rejected"].map(s => (
-                      <button key={s} onClick={() => setFilter(s)} className={`flex-1 sm:flex-none px-5 py-2 rounded-lg text-sm font-bold transition ${filter === s ? "bg-slate-900 text-white shadow-md" : "text-slate-500 hover:bg-slate-50"}`}>{s}</button>
+                      <button key={s} onClick={() => handleTabChange(s)} className={`flex-1 sm:flex-none px-5 py-2 rounded-lg text-sm font-bold transition ${filter === s ? "bg-slate-900 text-white shadow-md" : "text-slate-500 hover:bg-slate-50"}`}>{s}</button>
                   ))}
               </div>
           </div>
       </div>
 
-      {/* --- NEW: FILTER BAR --- */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-center">
           <div className="flex-1 w-full">
               <input 
@@ -290,14 +304,13 @@ export default function ApprovalsPage() {
           <div className="w-full md:w-48">
               <select 
                   value={platformFilter}
-                  onChange={(e) => setPlatformFilter(e.target.value)}
+                  onChange={handlePlatformChange}
                   className="w-full bg-slate-50 border border-slate-200 text-slate-900 px-4 py-2.5 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-violet-500 transition-all cursor-pointer"
               >
                   <option value="">All Platforms</option>
                   <option value="Instagram">Instagram</option>
                   <option value="YouTube">YouTube</option>
                   <option value="Twitter">Twitter</option>
-                  {/* Add other platforms your app supports here */}
               </select>
           </div>
 
@@ -305,7 +318,7 @@ export default function ApprovalsPage() {
               <input 
                   type="date" 
                   value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value)}
+                  onChange={handleDateChange}
                   className="w-full bg-slate-50 border border-slate-200 text-slate-900 px-4 py-2.5 rounded-lg text-sm font-medium outline-none focus:ring-2 focus:ring-violet-500 transition-all"
               />
               {(searchTerm || platformFilter || dateFilter) && (
@@ -319,7 +332,6 @@ export default function ApprovalsPage() {
           </div>
       </div>
 
-      {/* --- SELECTION & PAGINATION CONTROLS --- */}
       {submissions.length > 0 && filter === "Pending" && (
           <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
               <label className="flex items-center gap-2 text-slate-700 text-sm font-bold cursor-pointer">
@@ -354,7 +366,6 @@ export default function ApprovalsPage() {
           </div>
       )}
 
-      {/* --- DATA LIST --- */}
       {loading ? (
           <div className="text-center py-10 text-slate-500 font-bold animate-pulse">Loading tasks...</div>
       ) : submissions.length === 0 ? (
@@ -412,7 +423,6 @@ export default function ApprovalsPage() {
           </div>
       )}
       
-      {/* Bottom Pagination Controls (Unchanged) */}
       {!loading && totalPages > 1 && (
           <div className="flex flex-col sm:flex-row justify-center items-center mt-8 gap-4 text-sm font-bold text-slate-600 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
               <button 
