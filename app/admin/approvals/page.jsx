@@ -14,6 +14,13 @@ const REJECT_REASONS = [
 
 const ITEMS_PER_PAGE = 50;
 
+
+const getValidUrl = (text) => {
+    if (!text) return "#";
+    const match = text.match(/(https?:\/\/[^\s]+)/);
+    return match ? match[1] : text;
+};
+
 export default function ApprovalsPage() {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -400,7 +407,7 @@ export default function ApprovalsPage() {
                         </div>
                         
                         <h4 className="text-slate-700 font-medium text-sm mb-2">{sub.taskId?.title}</h4>
-                        <a href={sub.proofLink} target="_blank" rel="noreferrer" className="text-blue-600 text-xs font-bold hover:underline bg-blue-50 px-3 py-1.5 rounded-lg inline-block mb-3">View Proof ↗</a>
+                     <a href={getValidUrl(sub.proofLink)} target="_blank" rel="noreferrer" className="text-blue-600 text-xs font-bold hover:underline bg-blue-50 px-3 py-1.5 rounded-lg inline-block mb-3">View Proof ↗</a>
                         
                         <div className="text-xs text-slate-400 font-mono flex flex-wrap gap-4 items-center">
                             <span>{new Date(sub.createdAt).toLocaleString()}</span>
